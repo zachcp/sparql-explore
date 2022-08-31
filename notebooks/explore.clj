@@ -18,28 +18,77 @@
   ;; `:dev` alias, evaluate these two forms, point your browser there,
   ;; then read on. :)
   (clerk/serve! {:watch-paths ["notebooks"]})
-  (clerk/show! "notebooks/explore.clj")
-  )
-  
-  
-  
+  (clerk/show! "notebooks/explore.clj"))
 
 
-;; # Basic Information
 
-;; # EntryIdentifier
-;;  Each uniprot entry is identified by a [primary accession](https://www.uniprot.org/help/accession_numbers)
 
-;; And what about now 
 
-;; ```sparql
-;; SELECT * WHERE {
-;;   wd:Q451 ?p ?o
-;; }
-;; ```
+;; # Introduction
+;; 
+;; This notebook is an exploration of the UNIPROT SPARQL interface by way
+;; of copying/translating the [SPARQL examples](https://sparql.uniprot.org/.well-known/sparql-examples/)
+;; into [flint](https://github.com/yetanalytics/flint),  really nice clojure SPARQL DSL. I 
+;; also borrowed a number of functions from [Mundaneum](https://github.com/jackrusher/mundaneum), Jack Rusher's 
+;; excellent SPARQL DSL for wikidata.
+;; 
+;; ## Brief Recap of Findings
+;; 
+;; ### Flint / SPARQL
+;; 
+;; Flint is a solid library and where I had trouble it was largely due to 
+;; my lack of understanding of the SPARQL DSL. However, the [docs](https://cljdoc.org/d/com.yetanalytics/flint/0.2.0/doc/readme)
+;; are really good and I was able to wrk around the issues I encountered which, 
+;; roughly, were as follows.
+;; 
+;; 1. Lots of UNIPROT identifiers are  numbers or symbols and can cause issues
+;; for Flint parsing. You can always drop down to full IRI specification, e.g. like [this](https://github.com/yetanalytics/flint/issues/29#issuecomment-1232096313), 
+;; or you can use a function like `~(keywords "chebi/97065")` or the `full-tax-IRI`.
+;; 
+;; 2. The RDF object model feels slippery and its easy to get the node connections wrong. It
+;; also took me awhile to find the [property path](https://cljdoc.org/d/com.yetanalytics/flint/0.2.0/doc/triples)
+;; documents which explain how to construct complicated paths. (prperty paths are things like `alt`, `cat`, `*`, and `+`).
+
+;; 3. Similar to property paths it took me a little while to grok some of the nested forms. Once again
+;; the FLint docs and links to RDF were very helpful.
+
+
+
+
+;; ### UNIPROT
+;;
+;; UNIPROT is amazing. No doubt about it. During this exercise I ended up exploring the
+;; website deeper than I had in awhile and I get the feeling that the entire, awesome edifice
+;; is build on linked data. The benefits show up in richness of the links on every 
+;; page. I hadn't noticed the various panels on subcellular localization, nor the
+;; slick ways to view feature/variant locations. These are really nice features and
+;; you recreate the nuts and bolts of such viz when you go through some of the examples
+;; below if you combined a front end on top of the SPARQL data you get back you can 
+;; image creating the widgets without terrible difficulty (this is supposed to 
+;; read as a compliment to their data architecture team)
+
+;; Heres a couple of additional comments:
+
+;; 1. Federated queries are slow. In general if a query had a call to 
+;; `service` it was slow.  RheaDB seemed quite quick but many of the examples
+;; were slow or didn't finish at all (note: structure early queries as limited subqueries).
+;; One pleasant counterexample was the linkout to the [duck pics](http://localhost:7777/#Ducks%20with%20Pictures) - 
+;; they render nicely in the UNIPROT website.
+;; 
+;; 2. A bunch of the queries were broken or didn't work. As I was trying to both learn Flint 
+;; and UNIPROT this tripped me up a bit but I began to always check in the browser to make 
+;; sure a query actually could work as written.
+
+
 
 
 ;; # Helper Functions
+;; 
+;; I only ended up with one helper funciton but would consider a
+;; few for commonly used item - e.g taxonomy, protein names.
+;; note that this particular function only returns the [IRI literal](https://cljdoc.org/d/com.yetanalytics/flint/0.2.0/doc/rdf-terms)
+;; for the taxon of interest.
+;; 
 (defn full-tax-IRI [taxid]
   (str  "<http://purl.uniprot.org/taxonomy/" taxid ">"))
 
@@ -49,21 +98,20 @@
 ;; # Examples from UNIPROT
 ;; ## Get Taxa
 ;; Pull down 10 taxa
-(sq/query `{:select [?taxon] 
+(sq/query `{:select [?taxon]
             :where  [[?taxon :a :up/Taxon]]
             :limit 10})
-
 
 
 ;; ## Proteins from E.Coli
 ;; get bacterial tata
 ^{::clerk/viewer clerk/table}
- (sq/query
-  `{:select [?taxon ?name]
-    :where  [[?taxon :a :up/Taxon]
-             [?taxon :up/scientificName ?name]
-             [?taxon :rdfs/subClassOf  ~(full-tax-IRI 2)]]
-    :limit 5})
+(sq/query
+ `{:select [?taxon ?name]
+   :where  [[?taxon :a :up/Taxon]
+            [?taxon :up/scientificName ?name]
+            [?taxon :rdfs/subClassOf  ~(full-tax-IRI 2)]]
+   :limit 5})
 
 
 
@@ -87,7 +135,7 @@
             [?protein :rdfs/label ?name]]
    :limit 5})
 
- 
+
 ;; ## PDB Linkout
 ;;
 ;; Note: the  `keywords` are UNIPROT keywords. In this case it 
@@ -130,9 +178,9 @@
             [?protein   :up/recommendedName ?recommended]
             [?recommended :up/fullName ?name]
             [?protein :up/encodedBy ?gene]
-            [?gene :skos/prefLabel ?text] 
+            [?gene :skos/prefLabel ?text]
             [:filter  (contains ?text "DNA")]]
-   
+
    :limit 5})
 
 
@@ -144,7 +192,7 @@
  `{:select [?name ?text]
    :where  [[?protein a :up/Protein]
             [?protein :up/organism  ~(full-tax-IRI 9606)]
-            [?protein :up/encodedBy ?gene] 
+            [?protein :up/encodedBy ?gene]
             [?gene :skos/prefLabel ?name]
             [?protein :up/annotation ?annotation]
             [?annotation a :up/Disease_Annotation]
@@ -174,7 +222,7 @@
 (sq/query
  `{:select [?protein ?text]
    :where  [[?protein a :up/Protein]
-            [?protein :up/organism  ~(full-tax-IRI 9606)] 
+            [?protein :up/organism  ~(full-tax-IRI 9606)]
             [?protein :up/annotation ?annotation]
             [?annotation a :up/Natural_Variant_Annotation]
             [?annotation :rdfs/comment ?text]
@@ -202,7 +250,7 @@
             [:bind [(substr ?value ?begin 1) ?original]]
             [:filter (and (= ?original "Y")  (= ?substitution "F"))]]
    :limit 5})
- 
+
 
 ;; ## Transmembrane
 ;;
@@ -220,7 +268,7 @@
             [?annotation   :up/range ?range]
             [?range (cat :faldo/begin :faldo/position) ?begin]
             [?range (cat :faldo/end :faldo/position) ?end]]
-            
+
    :limit 5})
 
 
@@ -234,7 +282,7 @@
    :where  [[?protein a :up/Protein]
             [?protein   :up/created  ?date]
             [:filter (= ?date ~(tick/date "2010-11-30"))]]
-            
+
    :limit 5})
 
 ;; ## Check Integration Date
@@ -245,9 +293,9 @@
 (sq/query
  `{:ask []
    :where  [[?protein a :up/Protein]
-            [?protein   :up/created  ?date] 
+            [?protein   :up/created  ?date]
             [:filter (= ?date ~(tick/date "2013-01-09"))]]})
-            
+
 
 
 ;; ## Construct Triples
@@ -399,7 +447,7 @@
             [?diseaseAnnotation (cat :up/disease :skos/prefLabel) ?disease]
             [?subcellAnnotation (cat :up/locatedIn :up/cellularComponent) ?cellcmpt]
             [?cellcmpt :skos/prefLabel ?location_inside_cell]]
-            
+
    :limit 5})
 
 
@@ -428,13 +476,12 @@
 ;;
 ;; Count the kinases
 ;; 
-^{::clerk/viewer clerk/table}
 (sq/query
  `{:select [[(count ?protein :distinct? true) ?pc]]
    :where  [[?protein a :up/Protein]
             [?protein   :up/reviewed true]
             [?protein   :up/organism ~(full-tax-IRI 9606)]
-            [?protein 
+            [?protein
              (alt :up/classifiedWith (cat :up/classifiedWith :rdfs/subClassOf))
              ~(keyword "GO/0016301")]]})
 
@@ -454,15 +501,13 @@
 ;;  
 ;; Todo: also broken in the examples
 ;;
-^{::clerk/viewer clerk/table}
 (sq/query
  `{:select [?protein ?anyKindOfName]
-   :where  [
-            [?protein a :up/Protein]
+   :where  [[?protein a :up/Protein]
             [?protein  (alt :up/recommendedName :up/alternativeName) ?structuredName]
             [?structuredName ?anyKindOfName  "HLA class I histocompatibility antigen, B-73 alpha chain"]
             [?anyKindOfName :rdfs/subPropertyOf :up/structuredNameType]]})
-            
+
 
 
 
@@ -470,7 +515,6 @@
 ;;  
 ;; Todo: also broken in the examples
 ;;
-^{::clerk/viewer clerk/table}
 (sq/query
  `{:select [?protein ?anyKindOfName]
    :where  [[?protein a :up/Protein]
@@ -478,7 +522,7 @@
                         (alt :up/recommendedName :up/alternativeName)
                         (cat (alt :up/domain :up/component)
                              (alt :up/recommendedName :up/alternativeName)))
-            
+
              ?structuredName]
             [?structuredName ?anyKindOfName  "HLA class I histocompatibility antigen, B-73 alpha chain"]
             [?anyKindOfName :rdfs/subPropertyOf :up/structuredNameType]]})
@@ -524,7 +568,7 @@
             [?protein :up/organism ~(full-tax-IRI 360910)]
             [?protein :up/encodedBy ?gene]
             [?gene :up/locusName ?locusName]]
-            
+
    :group-by [?protein]
    :having [(> (count ?locusName) 1)]})
 
@@ -572,7 +616,7 @@
 
 
 
-   
+
 ;; ## Longest Variant Comment
 ;; 
 ;; This is the [proteome of E.Coli](https://www.uniprot.org/proteomes/UP000000625)
@@ -585,7 +629,7 @@
             [?annotation :rdfs/comment ?comment]]
    :order-by [(desc (strlen ?comment))]})
 
-;; # Co-occurence Count
+;; ## Co-occurence Count
 ;; Co-occurence count of Topological Domain comment text in UniProtKB entries
 ;; Todo: Implement
 
@@ -607,7 +651,7 @@
             [:filter (not (sameterm ?similar ?protein))]]})
 
 
-;; # Use OrthoDB
+;; ## Use OrthoDB
 ;;
 ;;  Todo: fix
 ;;  Note: doesn't work on the server either
@@ -695,8 +739,8 @@
 
 ;; ## Catalytic Activities
 ;; 
-;;   # Taxon 9606 is is human
-;;   # ECO 269 is experimental evidence
+;;   Taxon 9606 is is human
+;;   ECO 269 is experimental evidence
 ;; 
 ;;
 ^{::clerk/viewer clerk/table}
@@ -741,7 +785,7 @@
 ;;             [?protein :rdfs/seeAlso ?chemblEntry]
 ;;             [?chemblEntry :up/database  "<http://purl.uniprot.org/database/ChEMBL>"]]})
 ;; ```
-  
+
 
 
 ;; ## Sequence Fragments
@@ -809,19 +853,19 @@
 
 ;; ## Interpro and RheaDB
 ;; 
-;; Needs limit to work quickly
+;; Needs limit to work quickly.  Still slow. Adding to comments.
 ;;
-^{::clerk/viewer clerk/table}
-(sq/query
- `{:select [?interpro ?rhea]
-   :from   ["<http://sparql.uniprot.org/uniprot>"]
-   :where  [[?protein :up/reviewed true]
-            [?protein :up/annotation ?annotation]
-            [?protein :up/catalyticActivity ?rhea]
-            [?protein :rdfs/seeAlso ?interpro]
-            [?interpro :up/database "<http://purl.uniprot.org/database/InterPro>"]]
-   :limit 5})
-
+;; ```clj
+;; (sq/query
+;;  `{:select [?interpro ?rhea]
+;;    :from   ["<http://sparql.uniprot.org/uniprot>"]
+;;    :where  [[?protein :up/reviewed true]
+;;             [?protein :up/annotation ?annotation]
+;;             [?protein :up/catalyticActivity ?rhea]
+;;             [?protein :rdfs/seeAlso ?interpro]
+;;             [?interpro :up/database "<http://purl.uniprot.org/database/InterPro>"]]
+;;    :limit 5})
+;; ```
 
 
 
@@ -838,13 +882,13 @@
 ;;
 ^{::clerk/viewer clerk/table}
 (sq/query
- `{:select [ ?taxon ?ncbiTaxid ?eunisTaxon ?eunisname ?image]
-   :where  [[:graph 
+ `{:select [?taxon ?ncbiTaxid ?eunisTaxon ?eunisname ?image]
+   :where  [[:graph
              "<http://sparql.uniprot.org/taxonomy>"
              [[?taxon a :up/Taxon]
               [?taxon :rdfs/subClassOf ~(full-tax-IRI 8835)]
               [:bind [(strafter (str ?taxon) "onomy/")  ?ncbiTaxid]]]]
-            [:service 
+            [:service
              "<https://semantic.eea.europa.eu/sparql>"
              [[?eunisTaxon a :eunisSpecies/SpeciesSynonym]
               [?eunisTaxon :eunisSpecies/binomialName ?eunisname]
@@ -974,37 +1018,39 @@
 ;;
 ;; Note: takes a looooong time.
 ;; 
-^{::clerk/viewer clerk/table}
-(sq/query
- `{:select-distinct [?chebi ?reaction ?humanProtein ?mouseProtein ?cluster]
-   :where  [
-            ;; obtain rheaDB info
-            [:service
-             "<https://sparql.rhea-db.org/sparql>"
-             [[?reaction :rdfs/subClassOf :rh/Reaction] 
-              [?reaction (cat :rh/side :rh/contains :rh/compound) ?compound]
-              [?compound :rh/chebi ?chebi] 
-              [?chebi (* :rdfs/subClassOf) ~(keyword "CHEBI/15889")]]]
-            
-            ;; select/filter within uniprot/Sparql
-            [?humanProtein :up/organism ~(full-tax-IRI 9606)]
-            [?humanProtein :up/annotation ?a]
-            [?a   a :up/Catalytic_Activity_Annotation]
-            [?a   :up/catalyticActivity ?ca]
-            [?ca  :up/catalyzedReaction ?reaction]
+;; ```clj
+;; ^{::clerk/viewer clerk/table}
+;; (sq/query
+;;  `{:select-distinct [?chebi ?reaction ?humanProtein ?mouseProtein ?cluster]
+;;    :where  [
+;;             ;; obtain rheaDB info
+;;             [:service
+;;              "<https://sparql.rhea-db.org/sparql>"
+;;              [[?reaction :rdfs/subClassOf :rh/Reaction] 
+;;               [?reaction (cat :rh/side :rh/contains :rh/compound) ?compound]
+;;               [?compound :rh/chebi ?chebi] 
+;;               [?chebi (* :rdfs/subClassOf) ~(keyword "CHEBI/15889")]]]
 
-            ;; select/filter within uniprot/Sparql
-            [:service
-             "<https://sparql.omabrowser.org/sparql>"
-             [[?cluster a :orth/ParalogsCluster]
-              [?node1   :orth/hasHomologousMember* ?orthoProtein1]
-              [?node2   :orth/hasHomologousMember* ?orthoProtein2]
-              [?orthoProtein1 :lscr/xrefUniprot ?mouseProtein]
-              [?orthoProtein2 :lscr/xrefUniprot ?humanProtein]
-              ; homologs in mouse only
-              [?orthoProtein1 
-               (cat :orth/organism "<http://purl.obolibrary.org/obo/RO_0002162>")  
-               ~(full-tax-IRI 10090)]]] 
-            ]
-   
-   :limit 5})
+;;             ;; select/filter within uniprot/Sparql
+;;             [?humanProtein :up/organism ~(full-tax-IRI 9606)]
+;;             [?humanProtein :up/annotation ?a]
+;;             [?a   a :up/Catalytic_Activity_Annotation]
+;;             [?a   :up/catalyticActivity ?ca]
+;;             [?ca  :up/catalyzedReaction ?reaction]
+
+;;             ;; select/filter within uniprot/Sparql
+;;             [:service
+;;              "<https://sparql.omabrowser.org/sparql>"
+;;              [[?cluster a :orth/ParalogsCluster]
+;;               [?node1   :orth/hasHomologousMember* ?orthoProtein1]
+;;               [?node2   :orth/hasHomologousMember* ?orthoProtein2]
+;;               [?orthoProtein1 :lscr/xrefUniprot ?mouseProtein]
+;;               [?orthoProtein2 :lscr/xrefUniprot ?humanProtein]
+;;               ; homologs in mouse only
+;;               [?orthoProtein1 
+;;                (cat :orth/organism "<http://purl.obolibrary.org/obo/RO_0002162>")  
+;;                ~(full-tax-IRI 10090)]]] 
+;;             ]
+
+;;    :limit 5})
+;; ```
