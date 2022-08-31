@@ -18,7 +18,9 @@
   ;; `:dev` alias, evaluate these two forms, point your browser there,
   ;; then read on. :)
   (clerk/serve! {:watch-paths ["notebooks"]})
-  (clerk/show! "notebooks/explore.clj"))
+  (clerk/show! "notebooks/explore.clj")
+  (clerk/build-static-app! {:paths ["notebooks/explore.clj"]}) 
+  )
 
 
 
@@ -50,8 +52,16 @@
 ;; documents which explain how to construct complicated paths. (prperty paths are things like `alt`, `cat`, `*`, and `+`).
 
 ;; 3. Similar to property paths it took me a little while to grok some of the nested forms. Once again
-;; the FLint docs and links to RDF were very helpful.
+;; the Flint docs and links to RDF were very helpful.
 
+;; 4. I would benefit from a better investigation of the FALDO namespace; it is 
+;; being adopted as the descriptive standard for all feature locations.
+
+;;     - See [Variant: TYR->PHE](#Variant:%20TYR-%3EPHE) for FALDO describing the location of specifc mutations.
+;;     - see [Transmembrane](#Transmembrane) for faldo properties in combination with `cat`
+;;     - see [find phospho-Threonine](#find%20phospho-Threonine) this example uses faldo and is
+;;         used to identify a specific sequence motif in which a phospho-threonine is found: one of my favorite examples
+;; 
 
 
 
@@ -72,7 +82,7 @@
 ;; 1. Federated queries are slow. In general if a query had a call to 
 ;; `service` it was slow.  RheaDB seemed quite quick but many of the examples
 ;; were slow or didn't finish at all (note: structure early queries as limited subqueries).
-;; One pleasant counterexample was the linkout to the [duck pics](http://localhost:7777/#Ducks%20with%20Pictures) - 
+;; One pleasant counterexample was the linkout to the [duck pics](#Ducks%20with%20Pictures) - 
 ;; they render nicely in the UNIPROT website.
 ;; 
 ;; 2. A bunch of the queries were broken or didn't work. As I was trying to both learn Flint 
@@ -80,9 +90,20 @@
 ;; sure a query actually could work as written.
 
 
+;; ### SPARQL / FAIR Resource
+;; 
+;; I'm looking forward to trying more of the SPARQL scientific datasources out there. I think there
+;; may be ways to make the querying more ergonomic/discvoerable when using the REPL approach.
+;; Other Large Scientific SPARQL datasets.
+;; - ChEMBL
+;; - NEXTPROT 
+;; - PUBCHEM/
+;; - rheaDB
+;; - wikidata
 
 
-;; # Helper Functions
+
+;; ## Helper Functions
 ;; 
 ;; I only ended up with one helper funciton but would consider a
 ;; few for commonly used item - e.g taxonomy, protein names.
@@ -92,10 +113,26 @@
 (defn full-tax-IRI [taxid]
   (str  "<http://purl.uniprot.org/taxonomy/" taxid ">"))
 
+;; ## Display
+;; This page is rendered by [Clerk](https://github.com/nextjournal/clerk), an
+;; `Local-First Notebook [Technology] for Clojure`. This is my first time giving
+;; it a proper whirl and its great for many things although its a bit opposite
+;; from Rmd/[quarto](https://quarto.org) where the doc is Markdown and code/functions
+;; are fenced in blocks.  So, i don't have as good of a flow for working with it - but... 
+;; man does is look slick!
+;; 
+
 
 
 
 ;; # Examples from UNIPROT
+
+;; I tried to implement each of the examples in the UNIPROT website. Not all worked;
+;; some had issues; and some were slow. In each of those cases I ignored them and moved on.
+;; In some cases I commented the SPARQL of Flint-equivalanet. FOr the others, you would need to
+;; visit the UNIPROT website.
+;;
+
 ;; ## Get Taxa
 ;; Pull down 10 taxa
 (sq/query `{:select [?taxon]
@@ -104,7 +141,7 @@
 
 
 ;; ## Proteins from E.Coli
-;; get bacterial tata
+;; get bacterial taxa
 ^{::clerk/viewer clerk/table}
 (sq/query
  `{:select [?taxon ?name]
@@ -455,7 +492,6 @@
 ;;
 ;; Note the annotation type is transmembrane 
 ;; 
-;; and the faldo phrasing here makes more sense to me
 ^{::clerk/viewer clerk/table}
 (sq/query
  `{:select [?protein ?disease ?location_inside_cell ?cellcmpt]
@@ -467,7 +503,7 @@
    :limit 5})
 
 
-;; # Go Terminology Example
+;; ## Go Terminology Example
 ;;  Todo. Implement
 
 
