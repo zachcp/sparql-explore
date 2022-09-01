@@ -111,6 +111,9 @@
     })
 
 
+(def chembl-prefixes
+  "RDF Prefixes for CHEMBL queries"
+  {:chembl "<http://rdf.ebi.ac.uk/terms/chembl#>"})
 
 ;; The similarity search procedure call is mapped to property sachem:similaritySearch. It accepts following arguments:
 
@@ -186,6 +189,8 @@
 
 
 
+;; Query Helpers -----------------
+
 (defn do-query-uniprot
   "Query uniprot"
   [sparql-text]
@@ -193,10 +198,17 @@
 
 
 (defn do-query-pubchem
-  "Query the WikiData endpoint with the SPARQL query in `sparql-text` and convert the return into Clojure data structures."
+  "Query pubchem via IDSM"
   [sparql-text]
   (do-query-post sparql-text "https://idsm.elixir-czech.cz/sparql/endpoint/idsm"))
-                         
+
+
+(defn do-query-chembl
+  "Query chembl via BIGCAT"
+  [sparql-text]
+  (do-query sparql-text "https://chemblmirror.rdf.bigcat-bioinformatics.org/sparql"))
+
+
 
 (defn prepare-query 
   [sparql-form prefix-map]
@@ -204,6 +216,10 @@
       mq/clean-up-symbols-and-seqs
       (update :prefixes merge prefix-map)
       f/format-query))
+
+
+;; Query Fns -----------------
+;; Currently one per datasource.
 
 
 (defn query
@@ -223,3 +239,11 @@
      (println (clojure.pprint/pprint sparql-query))
      (do-query-pubchem sparql-query))))
 
+
+(defn query-chembl
+  ([sparql-form]
+   (query-chembl {} sparql-form))
+  ([opts sparql-form]
+   (let [sparql-query (prepare-query sparql-form chembl-prefixes)]
+     (println (clojure.pprint/pprint sparql-query))
+     (do-query-chembl sparql-query))))
