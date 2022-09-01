@@ -1,6 +1,6 @@
 ^{:nextjournal.clerk/visibility :hide-ns
   :nextjournal.clerk/toc true}
-(ns sparql-explore.explore
+(ns sparql-explore.explore_uniprot
   (:require [sparql-explore.query :as sq]
             [mundaneum.query :as md]
             [com.yetanalytics.flint :as f]
@@ -19,7 +19,7 @@
   ;; then read on. :)
   (clerk/serve! {:watch-paths ["notebooks"]})
   (clerk/show! "notebooks/explore.clj")
-  (clerk/build-static-app! {:paths ["notebooks/explore.clj"]}) 
+  (clerk/build-static-app! {:paths ["notebooks/explore_uniprot.clj"]}) 
   )
 
 
