@@ -18,22 +18,22 @@
   ;; `:dev` alias, evaluate these two forms, point your browser there,
   ;; then read on. :)
   (clerk/serve! {:watch-paths ["notebooks"]})
-  (clerk/show! "notebooks/explore_pubchem.clj")
+  (clerk/show! "notebooks/explore_pubchem.clj"))
   ;(clerk/build-static-app! {:paths ["notebooks/explore.clj"]})
-  )
+  
 
 
 
 ;; # Introduction
 ;; 
-;; This notebook is an exploration of the UNIPROT SPARQL interface by way
-;; of copying/translating the [SPARQL examples](https://sparql.uniprot.org/.well-known/sparql-examples/)
-;; into [flint](https://github.com/yetanalytics/flint),  really nice clojure SPARQL DSL. I 
-;; also borrowed a number of functions from [Mundaneum](https://github.com/jackrusher/mundaneum), Jack Rusher's 
-;; excellent SPARQL DSL for wikidata.
 
-;; ## Check the Lights
-;; (sq/query-pubchem  `{:select * :where [[?s ?p ?o]] :limit 10})
+;; - CHEBI is looking really nice
+;; - IDSM is fantastic and makes getting started iwth Pubchem quite reasonable
+;; - https://idsm.elixir-czech.cz/chemweb/
+;; - IDSM similarity tooling is good.
+;; - Pubchem commitment to small RDF surface area means better name handling could 
+;;   be created. [RDF](https://pubchemdocs.ncbi.nlm.nih.gov/rdf)
+;; - Easy to get an unbounded time query
 
 
 ;; # Pubchem Examples
@@ -66,8 +66,8 @@
              ; added these for clarity
              [?mg       :dcterms/title ?assay]
              [?protein  :dcterms/title ?protname]
-             [?ep       :rdfs/label ?epname]
-             ]
+             [?ep       :rdfs/label ?epname]]
+             
      :limit 10})
 
 
@@ -90,8 +90,41 @@
 
             ; make the names easier
             [?chebi :rdfs/label ?name]
-            [?role :rdfs/label ?rolename]
-            ]
-    })
+            [?role :rdfs/label ?rolename]]})
+            
+    
 
 
+;; ## E3: NSAIDs
+;; PubChemRDF Case 3: What compound have a pharmacological role of 
+;; NSAID as defined by ChEBI and molecular weight less than 250 g/mol? 
+;;
+;; tried to add names and overwhelmed the server  or something....
+;; ```clj
+;; ^{::clerk/viewer clerk/table}
+;; (sq/prepare-query
+;;  `{:select-distinct [?compound]
+;;    :where [; obo/CHEBI_35475 - NSAID
+;;            ; get compounds that are NSAIDs
+;;            [?compound a ?chebi]
+;;            [?chebi :rdfs/subClassOf _bn1]
+;;            [_bn1 a :owl/Restriction]
+;;            [_bn1 :owl/onProperty :obo/RO_0000087]
+;;            [_bn1 :owl/someValuesFrom :obo/CHEBI_35475]
+;;            [?comp a ?chebi]
+;;            [?chebi :rdfs/subClassOf _b1]
+;;            [_b1 a :owl/Restriction]
+;;            [_b1 :owl/onProperty :obo/RO_0000087]
+;;            [_b1 :owl/someValuesFrom ?role] 
+;;            ; :sio/CHEMINF_000334 Molecular Weight
+;;            [?compound :sio/has-attribute ?MW]
+;;            [?MW a :sio/CHEMINF_000334]
+;;            [?MW :sio/has-value ?MWValue]
+;;            [:filter (< ?MWValue 250 )]
+;;            ; make the names easier
+;;            ;;[?compound :rdfs/label ?name]
+;;           ;;  [?role :rdfs/label ?rolename]
+;;            ]} 
+;;  sq/pubchem-prefixes)
+;; ```
+ 
