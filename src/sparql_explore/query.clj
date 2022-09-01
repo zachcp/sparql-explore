@@ -94,10 +94,14 @@
     :cito     "<http://purl.org/spar/cito/>"   
     :fabio    "<http://purl.org/spar/fabio/>"   
     :pdbo     "<http://rdf.wwpdb.org/schema/pdbx-v40.owl#>" 
+
+    ;; pubchem uses `dcterms` not `dc`
     :dcterms  "<http://purl.org/dc/terms/>"
 
+    ;; duplicate from above
     :obo      "<http://purl.obolibrary.org/obo/>"
-    :sio      "<http://semanticscience.org/resource/>"
+    :sio      "<http://semanticscience.org/resource/>" 
+    :rdf "<http://www.w3.org/1999/02/22-rdf-syntax-ns#>"
     })
 
 
@@ -134,11 +138,13 @@
                                  (mq/uri->keyword #"(.*/)([^/]*)$" value)
                                  (:value v))
                        "literal" (condp = datatype
+                                   "http://www.w3.org/2001/XMLSchema#float" (Float/parseFloat value)
                                    "http://www.w3.org/2001/XMLSchema#decimal" (Float/parseFloat value)
                                    "http://www.w3.org/2001/XMLSchema#integer" (Integer/parseInt value)
                                    "http://www.w3.org/2001/XMLSchema#int" (Integer/parseInt value)
                                    "http://www.w3.org/2001/XMLSchema#dateTime" (tick/instant value)
                                    "http://www.w3.org/2001/XMLSchema#date" (tick/date value)
+
                                    nil value ; no datatype, return literal as is
                                    v) ; unknown datatype, return whole value map
                        v)]) ; unknown value type, return whole value map
