@@ -85,23 +85,29 @@
     :chembl   "<https://idsm.elixir-czech.cz/sparql/endpoint/chembl>"
     :chebi    "<https://idsm.elixir-czech.cz/sparql/endpoint/chebi>"
     :drugbank "<https://idsm.elixir-czech.cz/sparql/endpoint/drugbank>"
-    :wikidata "<https://idsm.elixir-czech.cz/sparql/endpoint/wikidata>" 
+    :wikidata "<https://idsm.elixir-czech.cz/sparql/endpoint/wikidata>"
     :bao      "<http://www.bioassayontology.org/bao#>"
     :ndfrt    "<http://evs.nci.nih.gov/ftp1/NDF-RT/NDF-RT.owl#>"
     :ncit     "<http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#>"
     :cheminfa "<http://semanticscience.org/resource/>"
     :bp       "<http://www.biopax.org/release/biopax-level3.owl#>"
-    :cito     "<http://purl.org/spar/cito/>"   
-    :fabio    "<http://purl.org/spar/fabio/>"   
-    :pdbo     "<http://rdf.wwpdb.org/schema/pdbx-v40.owl#>" 
+    :cito     "<http://purl.org/spar/cito/>"
+    :fabio    "<http://purl.org/spar/fabio/>"
+    :pdbo     "<http://rdf.wwpdb.org/schema/pdbx-v40.owl#>"
 
     ;; pubchem uses `dcterms` not `dc`
     :dcterms  "<http://purl.org/dc/terms/>"
 
     ;; duplicate from above
     :obo      "<http://purl.obolibrary.org/obo/>"
-    :sio      "<http://semanticscience.org/resource/>" 
+    :sio      "<http://semanticscience.org/resource/>"
     :rdf "<http://www.w3.org/1999/02/22-rdf-syntax-ns#>"
+    :rdfs "<http://www.w3.org/2000/01/rdf-schema#>"
+    :owl "<http://www.w3.org/2002/07/owl#>"
+
+    ;; pubchem terms
+    :substance "<http://rdf.ncbi.nlm.nih.gov/pubchem/substance/>"
+    :compound  "<http://rdf.ncbi.nlm.nih.gov/pubchem/compound/>"
     })
 
 
@@ -144,6 +150,7 @@
                                    "http://www.w3.org/2001/XMLSchema#int" (Integer/parseInt value)
                                    "http://www.w3.org/2001/XMLSchema#dateTime" (tick/instant value)
                                    "http://www.w3.org/2001/XMLSchema#date" (tick/date value)
+                                   "http://www.w3.org/2001/XMLSchema#string" value
 
                                    nil value ; no datatype, return literal as is
                                    v) ; unknown datatype, return whole value map

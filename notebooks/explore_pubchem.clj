@@ -70,3 +70,28 @@
              ]
      :limit 10})
 
+
+
+;; ## E2: Pharmaco-roles
+;; What pharmacological roles of SID46505803 are defined by ChEBI
+;;  Note the use of the anonymous  blanknode, `_b1` to define boundaries
+^{::clerk/viewer clerk/table}
+(sq/query-pubchem
+  `{:select-distinct [?name ?rolename]
+    :where [
+            ; :sio/CHEMINF_000477 = has PubChem normalized counterpar
+            [:bind [:substance/SID46505803 ?sub]]
+            [?sub :sio/CHEMINF_000477 ?comp]
+            [?comp a ?chebi] 
+            [?chebi :rdfs/subClassOf _b1]
+            [_b1 a :owl/Restriction]
+            [_b1 :owl/onProperty :obo/RO_0000087]
+            [_b1 :owl/someValuesFrom ?role]
+
+            ; make the names easier
+            [?chebi :rdfs/label ?name]
+            [?role :rdfs/label ?rolename]
+            ]
+    })
+
+
