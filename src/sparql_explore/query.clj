@@ -113,7 +113,8 @@
 
 (def chembl-prefixes
   "RDF Prefixes for CHEMBL queries"
-  {:chembl "<http://rdf.ebi.ac.uk/terms/chembl#>"})
+  {:rdfs "<http://www.w3.org/2000/01/rdf-schema#>"
+   :chembl "<http://rdf.ebi.ac.uk/terms/chembl#>"})
 
 ;; The similarity search procedure call is mapped to property sachem:similaritySearch. It accepts following arguments:
 
@@ -146,8 +147,16 @@
                        "uri" (or (mq/uri->keyword #"(.*#)(.*)$" value)
                                  (mq/uri->keyword #"(.*/)([^/]*)$" value)
                                  (:value v))
-                       "literal" (condp = datatype
-                                   "http://www.w3.org/2001/XMLSchema#float" (Float/parseFloat value)
+                       
+                       "typed-literal" (condp = datatype
+                                         "http://www.w3.org/2001/XMLSchema#double"  (Float/parseFloat value)
+                                          nil value ; no datatype, return literal as is
+                                         v) ; unknown datatype, return whole value map)
+                       
+                       "literal"
+                       (condp = datatype
+                                   "http://www.w3.org/2001/XMLSchema#float"  (Float/parseFloat value)
+                                   "http://www.w3.org/2001/XMLSchema#double"  (Float/parseFloat value)
                                    "http://www.w3.org/2001/XMLSchema#decimal" (Float/parseFloat value)
                                    "http://www.w3.org/2001/XMLSchema#integer" (Integer/parseInt value)
                                    "http://www.w3.org/2001/XMLSchema#int" (Integer/parseInt value)
@@ -159,6 +168,7 @@
                                    v) ; unknown datatype, return whole value map
                        v)]) ; unknown value type, return whole value map
                 result)))
+
 
 
 (defn do-query

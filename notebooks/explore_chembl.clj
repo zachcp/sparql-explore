@@ -39,4 +39,22 @@
 ;;    :where [[?s ?p ?o]]})
 ;; ```
 
+;; ## Binding Affinity
+^{::clerk/viewer clerk/table}
+(sq/query-chembl 
+ `{:select-distinct [?targetLabel ?molLabel ?assayLabel ?type ?value]
+   :where [
+           [?assay    :chembl/hasTarget     ?target]
+           [?activity :chembl/hasAssay      ?assay]
+           [?activity :chembl/hasMolecule   ?molecule]
+           [?activity :chembl/type          ?type] 
+           [?activity :chembl/standardValue ?value]
+           ; get labels
+           [?target   :rdfs/label ?targetLabel]
+           [?molecule :rdfs/label ?molLabel]
+           [?assay    :rdfs/label ?assayLabel]
+           [?molecule :rdfs/label ?molLabel]] 
+   
+   :limit 10})
+   
 
