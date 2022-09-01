@@ -18,8 +18,13 @@
   ;; `:dev` alias, evaluate these two forms, point your browser there,
   ;; then read on. :)
   (clerk/serve! {:watch-paths ["notebooks"]})
-  (clerk/show! "notebooks/explore_chembl.clj"))
-  ;(clerk/build-static-app! {:paths ["notebooks/explore.clj"]})
+  (clerk/show! "notebooks/explore_chembl.clj")
+  (clerk/build-static-app! {:paths [
+                                    "notebooks/explore.clj"
+                                    "notebooks/explore_pubchem.clj"
+                                    "notebooks/explore_chembl.clj"
+                                    ]})
+  )
 
 
 
@@ -29,16 +34,14 @@
 
 ;; Chembl mirror hosted on Bigcat
 ;; https://chemblmirror.rdf.bigcat-bioinformatics.org/sparql
+;;
+;; Initial impressions are very clean syntax. 
+;; I encountered only one issue: the use of the `void` namespace - will 
+;; need to look that up.
+
 
 ;; # Chembl Examples
 ;; 
-;; ## Check
-;; ```clj
-;; (sq/query-chembl
-;;  `{:select [[(count *) ?count]]
-;;    :where [[?s ?p ?o]]})
-;; ```
-
 ;; ## Binding Affinity
 ^{::clerk/viewer clerk/table}
 (sq/query-chembl 
@@ -46,6 +49,8 @@
    :where [
            [?assay    :chembl/hasTarget     ?target]
            [?activity :chembl/hasAssay      ?assay]
+
+
            [?activity :chembl/hasMolecule   ?molecule]
            [?activity :chembl/type          ?type] 
            [?activity :chembl/standardValue ?value]
@@ -58,3 +63,42 @@
    :limit 10})
    
 
+;; ## SMILES
+;;
+^{::clerk/viewer clerk/table}
+(sq/query-chembl
+ `{:select [?identifier ?smiles ?image ]
+   :where [; SIO_000008     has-attribute
+           ; CHEMINF_000018 SMILES descriptor
+           ; SIO_000300     has value    
+           [?s a :chembl/SmallMolecule]
+           [?s :chembl/chemblId ?identifier]
+           [?s :foaf/depiction  ?image]
+           [?s :cheminf/SIO_000008 _b1]
+             [_b1 a :cheminf/CHEMINF_000018]
+             [_b1 :cheminf/SIO_000300 ?smiles]
+           ]
+   :limit 10})
+
+
+;; ## Metadata: Terms
+;; 
+;; Todo: handle VOID. Not sure what that is.
+^{::clerk/viewer clerk/table}
+(sq/query-chembl
+ `{:prefixes {:pav     "<http://purl.org/pav/>"
+              :dcterms "<http://purl.org/dc/terms/>"}
+   :select-distinct [ [(str ?titleLit) ?title] ?date ?license ?dataset]
+   :where [
+           ;[?dataset a void:Dataset") ]
+           [?dataset :dcterms/title   ?titleLit]
+           [?dataset :dcterms/license ?license]
+           [?dataset :pav/createdOn   ?date]]
+   :limit 5})
+
+
+;; ## Triples Count
+(sq/query-chembl 
+ `{:select [[(count *) ?count]]
+   :where [[?s ?p ?o]]
+   :limit 10})

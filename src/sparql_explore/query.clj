@@ -113,8 +113,13 @@
 
 (def chembl-prefixes
   "RDF Prefixes for CHEMBL queries"
-  {:rdfs "<http://www.w3.org/2000/01/rdf-schema#>"
-   :chembl "<http://rdf.ebi.ac.uk/terms/chembl#>"})
+  {:rdfs       "<http://www.w3.org/2000/01/rdf-schema#>"
+   :chembl     "<http://rdf.ebi.ac.uk/terms/chembl#>"
+   :cheminf    "<http://semanticscience.org/resource/>"
+   :chembl_mol "<http://rdf.ebi.ac.uk/resource/chembl/molecule/>"
+   :skos       "<http://www.w3.org/2004/02/skos/core#>"
+   :foaf       "<http://xmlns.com/foaf/0.1/>"
+   :schema     "<https://schema.org/>"})
 
 ;; The similarity search procedure call is mapped to property sachem:similaritySearch. It accepts following arguments:
 
@@ -150,6 +155,10 @@
                        
                        "typed-literal" (condp = datatype
                                          "http://www.w3.org/2001/XMLSchema#double"  (Float/parseFloat value)
+                                         "http://www.w3.org/2001/XMLSchema#dateTime" (tick/instant value)
+                                         "http://www.w3.org/2001/XMLSchema#date" (tick/date value)
+                                         "http://www.w3.org/2001/XMLSchema#integer"  (Integer/parseInt value)
+                                         "http://www.w3.org/2001/XMLSchema#int"      (Integer/parseInt value)
                                           nil value ; no datatype, return literal as is
                                          v) ; unknown datatype, return whole value map)
                        
