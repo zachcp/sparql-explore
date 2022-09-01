@@ -3,47 +3,10 @@
             [mundaneum.query :as mq]
             [hato.client :as http]
             [clojure.data.json :as json]
-            [tick.core :as tick])
-  )
+            [tick.core :as tick]))
 
 
-
-;; modify the outputs
-;; (def ^:dynamic *endpoint* "https://query.wikidata.org/sparql")
-;; (def ^:dynamic *endpoint* "https://idsm.elixir-czech.cz/sparql/endpoint/chebi")
-
-
-(defn clojurize-values
-  "Convert the values in `result` to Clojure types."
-  [result]
-  (into {} (map (fn [[k {:keys [type value datatype] :as v}]]
-                  [k (condp = type
-                       "uri" (or (mq/uri->keyword #"(.*#)(.*)$" value)
-                                 (mq/uri->keyword #"(.*/)([^/]*)$" value)
-                                 (:value v))
-                       "literal" (condp = datatype
-                                   "http://www.w3.org/2001/XMLSchema#decimal" (Float/parseFloat value)
-                                   "http://www.w3.org/2001/XMLSchema#integer" (Integer/parseInt value)
-                                   "http://www.w3.org/2001/XMLSchema#int" (Integer/parseInt value)
-                                   "http://www.w3.org/2001/XMLSchema#dateTime" (tick/instant value)
-                                   "http://www.w3.org/2001/XMLSchema#date" (tick/date value)
-                                   nil value ; no datatype, return literal as is
-                                   v) ; unknown datatype, return whole value map
-                       v)]) ; unknown value type, return whole value map
-                result)))
-
-(defn do-query-uniprot
-  "Query the WikiData endpoint with the SPARQL query in `sparql-text` and convert the return into Clojure data structures."
-  [sparql-text]
-   (mapv clojurize-values
-         (-> (http/get "https://sparql.uniprot.org/sparql/"
-                       {:query-params {:query sparql-text
-                                       :format "json"}})
-             :body
-             (json/read-str :key-fn keyword)
-             :results
-             :bindings)))
-
+;; Static Prefix Values
 
 (def uniprot-prefixes
   "RDF prefixes automatically supported by the WikiData query service."
@@ -106,19 +69,111 @@
    :insdcschema "<http://ddbj.nig.ac.jp/ontologies/nucleotide/>"
    :rdfs "<http://www.w3.org/2000/01/rdf-schema#>"
    :taxon "<http://purl.uniprot.org/taxonomy/>"
-   :up "<http://purl.uniprot.org/core/>"})
+   :up "<http://purl.uniprot.org/core/>"
+   })
 
 
-;; TODO should label service be optional?
-;; (defn query
-;;   ([sparql-form]
-;;    (query {} sparql-form))
-;;   ([opts sparql-form]
-;;    (-> sparql-form
-;;        mq/clean-up-symbols-and-seqs
-;;        (update :prefixes merge uniprot-prefixes)
-;;        f/format-query
-;;       do-query-uniprot)))
+
+(def pubchem-prefixes
+  "RDF prefixes used by the IDSM webserver as described 
+   here:https://idsm.elixir-czech.cz/sparql/doc/manual.html"
+   {:sachem   "<http://bioinfo.uochb.cas.cz/rdf/v1.0/sachem#>"
+    :pubchem  "<https://idsm.elixir-czech.cz/sparql/endpoint/pubchem>"
+    :chembl   "<https://idsm.elixir-czech.cz/sparql/endpoint/chembl>"
+    :chebi    "<https://idsm.elixir-czech.cz/sparql/endpoint/chebi>"
+    :drugbank "<https://idsm.elixir-czech.cz/sparql/endpoint/drugbank>"
+    :wikidata "<https://idsm.elixir-czech.cz/sparql/endpoint/wikidata>"
+    
+    ; add those use by pubchem but not in the uniprot list
+    ; https://pubchemdocs.ncbi.nlm.nih.gov/rdf#table1 
+    :bao      "<http://www.bioassayontology.org/bao#>"
+    :ndfrt    "<http://evs.nci.nih.gov/ftp1/NDF-RT/NDF-RT.owl#>"
+    :ncit     "<http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#>"
+    :cheminfa "<http://semanticscience.org/resource/>"
+    :bp       "<http://www.biopax.org/release/biopax-level3.owl#>"
+    :cito     "<http://purl.org/spar/cito/>" 	
+    :fabio    "<http://purl.org/spar/fabio/>" 	
+    :pdbo     "<http://rdf.wwpdb.org/schema/pdbx-v40.owl#>" 	
+    ;dcterms note we already have dc as alias
+    :dcterms  "<http://purl.org/dc/terms/>"})
+
+
+
+  
+  
+;; The similarity search procedure call is mapped to property sachem:similaritySearch. It accepts following arguments:
+
+;; sachem:query specifies the chemical structure to be searched for. Supported query types include SMILES and MDL molecule file. This argument is mandatory.
+;; sachem:cutoff specifies the cutoff for the similarity search (the default value is 0.8, values are in range of 0 to 1).
+;; sachem:topn sets the upper limit on the count of returned results (default value is "unlimited", specified by -1).
+;; Results of the procedure are compound values, that have following properties:
+
+;; sachem:compound — compound URI
+;; sachem:score — the similarity score of the compound
+;; There is also a simplified variant of the similarity search procedure, mapped to property sachem:similarCompoundSearch. It uses the same arguments as sachem:similaritySearch, but returns the identified compounds directly as single-value non-structured results.
+
+;; Substructure search
+;; The substructure search procedure is mapped to property sachem:substructureSearch. It uses arguments sachem:query and sachem:topn with the same meaning as in the previous case, together with following extra arguments:
+
+;; sachem:searchMode chooses between exact structure and substructure search, using parameter values sachem:exactSearch and sachem:substructureSearch, respectively.
+;; sachem:tautomerMode chooses between various tautomer handling modes, value sachem:ignoreTautomers disables any tautomerism processing, sachem:inchiTautomers uses InChI-derived tautomer mathcing.
+;; sachem:chargeMode chooses a coalescing mode of unspecified charge values in query, value sachem:defaultChargeAsAny assumes that unspecified charges are wildcard, sachem:defaultChargeAsZero assumes that unspecified charges must match zero, and sachem:ignoreCharges disables any charge matching.
+;; sachem:isotopeMode chooses a coalescing mode of unspecified isotope values in query, value sachem:defaultIsotopeAsAny assumes that unspecified isotope values match any isotope, sachem:defaultIsotopeAsStandard assumes that unspecified isotopes must match the standard isotope of the element, and sachem:ignoreIsotopes disables any isotope matching.
+;; sachem:stereoMode chooses stereochemistry handling using sachem:strictStereo or disables it completely using sachem:ignoreStereo
+;; sachem:radicalMode chooses handling of free radicals, using either sachem:ignoreSpinMultiplicity that disables it completely, or sachem:defaultSpinMultiplicityAsZero and sachem:defaultSpinMultiplicityAsAny that behave just like the isotope and charge modes.
+
+
+
+
+(defn clojurize-values
+  "Convert the values in `result` to Clojure types."
+  [result]
+  (into {} (map (fn [[k {:keys [type value datatype] :as v}]]
+                  [k (condp = type
+                       "uri" (or (mq/uri->keyword #"(.*#)(.*)$" value)
+                                 (mq/uri->keyword #"(.*/)([^/]*)$" value)
+                                 (:value v))
+                       "literal" (condp = datatype
+                                   "http://www.w3.org/2001/XMLSchema#decimal" (Float/parseFloat value)
+                                   "http://www.w3.org/2001/XMLSchema#integer" (Integer/parseInt value)
+                                   "http://www.w3.org/2001/XMLSchema#int" (Integer/parseInt value)
+                                   "http://www.w3.org/2001/XMLSchema#dateTime" (tick/instant value)
+                                   "http://www.w3.org/2001/XMLSchema#date" (tick/date value)
+                                   nil value ; no datatype, return literal as is
+                                   v) ; unknown datatype, return whole value map
+                       v)]) ; unknown value type, return whole value map
+                result)))
+
+
+(defn do-query-uniprot
+  "Query the WikiData endpoint with the SPARQL query in `sparql-text` and convert the return into Clojure data structures."
+  [sparql-text]
+   (mapv clojurize-values
+         (-> (http/get "https://sparql.uniprot.org/sparql/"
+                       {:query-params {:query sparql-text
+                                       :format "json"}})
+             :body
+             (json/read-str :key-fn keyword)
+             :results
+             :bindings)))
+
+
+(defn do-query-pubchem
+  "Query the WikiData endpoint with the SPARQL query in `sparql-text` and convert the return into Clojure data structures."
+  [sparql-text]
+  (mapv clojurize-values
+        (-> (http/get "https://idsm.elixir-czech.cz/sparql/endpoint/idsm"
+                      {:query-params {:query sparql-text
+                                      :format "json"}})
+            :body
+            (json/read-str :key-fn keyword)
+            :results
+            :bindings)))
+
+
+
+
+
 
 (defn query
   ([sparql-form]
@@ -131,3 +186,16 @@
               f/format-query)]
       (println (clojure.pprint/pprint sparql-query)) 
       (do-query-uniprot sparql-query))))
+
+
+(defn query-pubchem
+  ([sparql-form]
+   (query {} sparql-form))
+  ([opts sparql-form]
+   (let [sparql-query
+         (-> sparql-form
+             mq/clean-up-symbols-and-seqs
+             (update :prefixes merge pubchem-prefixes)
+             f/format-query)]
+     (println (clojure.pprint/pprint sparql-query))
+     (do-query-pubchem sparql-query))))
