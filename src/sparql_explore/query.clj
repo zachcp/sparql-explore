@@ -6,7 +6,7 @@
             [tick.core :as tick]))
 
 
-;; Static Prefix Values
+;; Static Prefix Values -------------
 
 (def uniprot-prefixes
   "RDF prefixes automatically supported by the WikiData query service."
@@ -69,38 +69,39 @@
    :insdcschema "<http://ddbj.nig.ac.jp/ontologies/nucleotide/>"
    :rdfs "<http://www.w3.org/2000/01/rdf-schema#>"
    :taxon "<http://purl.uniprot.org/taxonomy/>"
-   :up "<http://purl.uniprot.org/core/>"
-   })
+   :up "<http://purl.uniprot.org/core/>"})
+   
 
 
 
 (def pubchem-prefixes
   "RDF prefixes used by the IDSM webserver as described 
    here:https://idsm.elixir-czech.cz/sparql/doc/manual.html"
+    ; add those use by pubchem but not in the uniprot list
+    ; https://pubchemdocs.ncbi.nlm.nih.gov/rdf#table1 
+    ; dcterms note we already have dc as alias
    {:sachem   "<http://bioinfo.uochb.cas.cz/rdf/v1.0/sachem#>"
     :pubchem  "<https://idsm.elixir-czech.cz/sparql/endpoint/pubchem>"
     :chembl   "<https://idsm.elixir-czech.cz/sparql/endpoint/chembl>"
     :chebi    "<https://idsm.elixir-czech.cz/sparql/endpoint/chebi>"
     :drugbank "<https://idsm.elixir-czech.cz/sparql/endpoint/drugbank>"
-    :wikidata "<https://idsm.elixir-czech.cz/sparql/endpoint/wikidata>"
-    
-    ; add those use by pubchem but not in the uniprot list
-    ; https://pubchemdocs.ncbi.nlm.nih.gov/rdf#table1 
+    :wikidata "<https://idsm.elixir-czech.cz/sparql/endpoint/wikidata>" 
     :bao      "<http://www.bioassayontology.org/bao#>"
     :ndfrt    "<http://evs.nci.nih.gov/ftp1/NDF-RT/NDF-RT.owl#>"
     :ncit     "<http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#>"
     :cheminfa "<http://semanticscience.org/resource/>"
     :bp       "<http://www.biopax.org/release/biopax-level3.owl#>"
-    :cito     "<http://purl.org/spar/cito/>" 	
-    :fabio    "<http://purl.org/spar/fabio/>" 	
-    :pdbo     "<http://rdf.wwpdb.org/schema/pdbx-v40.owl#>" 	
-    ;dcterms note we already have dc as alias
-    :dcterms  "<http://purl.org/dc/terms/>"})
+    :cito     "<http://purl.org/spar/cito/>"   
+    :fabio    "<http://purl.org/spar/fabio/>"   
+    :pdbo     "<http://rdf.wwpdb.org/schema/pdbx-v40.owl#>" 
+    :dcterms  "<http://purl.org/dc/terms/>"
+
+    :obo      "<http://purl.obolibrary.org/obo/>"
+    :sio      "<http://semanticscience.org/resource/>"
+    })
 
 
 
-  
-  
 ;; The similarity search procedure call is mapped to property sachem:similaritySearch. It accepts following arguments:
 
 ;; sachem:query specifies the chemical structure to be searched for. Supported query types include SMILES and MDL molecule file. This argument is mandatory.
@@ -124,7 +125,6 @@
 
 
 
-
 (defn clojurize-values
   "Convert the values in `result` to Clojure types."
   [result]
@@ -145,24 +145,11 @@
                 result)))
 
 
-(defn do-query-uniprot
-  "Query the WikiData endpoint with the SPARQL query in `sparql-text` and convert the return into Clojure data structures."
-  [sparql-text]
-   (mapv clojurize-values
-         (-> (http/get "https://sparql.uniprot.org/sparql/"
-                       {:query-params {:query sparql-text
-                                       :format "json"}})
-             :body
-             (json/read-str :key-fn keyword)
-             :results
-             :bindings)))
-
-
-(defn do-query-pubchem
-  "Query the WikiData endpoint with the SPARQL query in `sparql-text` and convert the return into Clojure data structures."
-  [sparql-text]
+(defn do-query
+  "Submit SPARQL data to SPARQL Endpoint"
+  [sparql-text sparql-url]
   (mapv clojurize-values
-        (-> (http/get "https://idsm.elixir-czech.cz/sparql/endpoint/idsm"
+        (-> (http/get sparql-url
                       {:query-params {:query sparql-text
                                       :format "json"}})
             :body
@@ -170,32 +157,56 @@
             :results
             :bindings)))
 
+(defn do-query-post
+  "Submit SPARQL data to SPARQL Endpoint"
+  [sparql-text sparql-url]
+  (mapv clojurize-values
+        (-> (http/post sparql-url 
+                ; too me awhile to figure out the post params!
+                ; cURL to the rescue then use clj
+               {:accept "application/sparql-results+json"
+                :form-params {:query sparql-text}})
+            :body
+            (json/read-str :key-fn keyword)
+            :results
+            :bindings)))
 
 
 
+(defn do-query-uniprot
+  "Query uniprot"
+  [sparql-text]
+  (do-query sparql-text "https://sparql.uniprot.org/sparql/"))
+
+
+(defn do-query-pubchem
+  "Query the WikiData endpoint with the SPARQL query in `sparql-text` and convert the return into Clojure data structures."
+  [sparql-text]
+  (do-query-post sparql-text "https://idsm.elixir-czech.cz/sparql/endpoint/idsm"))
+                         
+
+(defn prepare-query 
+  [sparql-form prefix-map]
+  (-> sparql-form
+      mq/clean-up-symbols-and-seqs
+      (update :prefixes merge prefix-map)
+      f/format-query))
 
 
 (defn query
   ([sparql-form]
    (query {} sparql-form))
   ([opts sparql-form]
-    (let [sparql-query 
-          (-> sparql-form 
-              mq/clean-up-symbols-and-seqs 
-              (update :prefixes merge uniprot-prefixes) 
-              f/format-query)]
-      (println (clojure.pprint/pprint sparql-query)) 
-      (do-query-uniprot sparql-query))))
+   (let [sparql-query (prepare-query sparql-form uniprot-prefixes)]
+     (println (clojure.pprint/pprint sparql-query)) 
+     (do-query-uniprot sparql-query))))
 
 
 (defn query-pubchem
   ([sparql-form]
-   (query {} sparql-form))
+   (query-pubchem {} sparql-form))
   ([opts sparql-form]
-   (let [sparql-query
-         (-> sparql-form
-             mq/clean-up-symbols-and-seqs
-             (update :prefixes merge pubchem-prefixes)
-             f/format-query)]
+   (let [sparql-query (prepare-query sparql-form pubchem-prefixes)]
      (println (clojure.pprint/pprint sparql-query))
      (do-query-pubchem sparql-query))))
+

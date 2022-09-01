@@ -19,7 +19,8 @@
   ;; then read on. :)
   (clerk/serve! {:watch-paths ["notebooks"]})
   (clerk/show! "notebooks/explore_pubchem.clj")
-  (clerk/build-static-app! {:paths ["notebooks/explore.clj"]}))
+  ;(clerk/build-static-app! {:paths ["notebooks/explore.clj"]})
+  )
 
 
 
@@ -32,27 +33,28 @@
 ;; excellent SPARQL DSL for wikidata.
 
 ;; ## Check the Lights
-(sq/query-pubchem  `{:select * :where [[?s ?p ?o]] :limit 10})
+;; (sq/query-pubchem  `{:select * :where [[?s ?p ?o]] :limit 10})
+
 
 ;; # Pubchem Examples
 
 ;; ## E1: 
 ;; What protein targets does donepezil (CHEBI_53289) 
 ;; inhibit with an IC50 less than 10 µM?
-(sq/query-pubchem  
- `{:select-distinct [?proteins]
-   
-   :where [
-           ; :obo/RO_0000056 = mg
+
+(sq/query-pubchem
+   `{:select-distinct [?protein]
+     :where [; :obo/RO_0000056 = mg
            ; :obo/RO_0000057 = ?
            ; :obo/CHEBI_53289 = donepezil
            ; :obo/CHEBI_53289 = donepezil
-           [?sub :rdf/type       :obo/CHEBI_53289]
-           [?sub :obo/RO_0000056 ?mg]
-           [?mg  :obo/RO_0000057 ?protein]
-           [?protein :a :bp/Protein]
-           [?ep :a  :bao/BAO_0000190]
-           [?ep :obo/IAO_0000136 ?sub]
-           [?ep :sio/has-value ?value]
-           [:filter (< ?value 10)]]
-})
+             [?sub :a             :obo/CHEBI_53289]
+             [?sub :obo/RO_0000056 ?mg]
+             [?mg  :obo/RO_0000057 ?protein]
+             [?mg  :obo/OBI_0000299 ?ep]
+             [?protein :a :bp/Protein]
+             [?ep :a               :bao/BAO_0000190]
+             [?ep :obo/IAO_0000136 ?sub]
+             [?ep :sio/has-value   ?value]
+             [:filter (< ?value 10)]]})
+
