@@ -20,3 +20,10 @@ Queries and data rendered [online](https://zachcp.github.io/sparql-explore/#/not
 ```sh
 lein new app sparql-explore
 ```
+
+## Simple Deploy
+```
+# build in repl
+cp public/build/index.html docs.index.ttml
+# git commit / push
+```
