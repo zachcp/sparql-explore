@@ -41,8 +41,7 @@
 ;;  information. 
 (query-metanetx 
  `{:select [?metabolite ?label ?reference ?formula ?charge ?inchi ?inchikey ?smiles]
-   :where [
-           [?metabolite :a :mnx/CHEM]
+   :where [[?metabolite :a :mnx/CHEM]
            [?metabolite :rdfs/label ?label] 
            [?metabolite :rdfs/comment "N,N-dimethyl-beta-alanine"]
            [?metabolite :mnx/chemRefer ?reference]
@@ -50,8 +49,50 @@
            [:optional [[?metabolite :mnx/charge   ?charge ]]]
            [:optional [[?metabolite :mnx/inchi    ?inchi]]]
            [:optional [[?metabolite :mnx/inchikey ?inchikey]]]
-           [:optional [[?metabolite :mnx/smiles   ?smiles]]]
-           ]
-   :limit 10
-   })
+           [:optional [[?metabolite :mnx/smiles   ?smiles]]]]})
+
+;; ## External Identifiers
+;;
+;; Retrieve the identifiers for *N,N-dimethyl-beta-alanine* in
+;; external databases. This crosslinking of external
+;; identifiers is the core of MNXref.
+
+(query-metanetx
+ `{:select [?metabolite ?xref]
+   :where [[?metabolite :rdfs/comment "N-nitrosomethanamine"]
+           [?metabolite :mnx/chemXref ?xref]]})
+
+
+;; ## KEGG C01732
+;;
+;; For the KEGG compound C01732, retrieve the
+;; MNXref identifier, name and reference
+
+(query-metanetx
+ `{:prefixes {:keggC "<https://identifiers.org/kegg.compound:>"}
+   :select [?metabolite ?reference ?name]
+   :where [[?metabolite :a :mnx/CHEM]
+           [?metabolite :mnx/chemRefer ?reference]
+           [?metabolite :rdfs/comment ?name]
+           [?metabolite :mnx/chemXref :keggC/C01732]]})
+
+
+;; ##  Reaction Identifier
+;;
+;; Retrieve the MNXref reaction identifier, 
+;; that corresponds to the KEGG reaction R00703 
+;; (lactate dehydrogenase)
+
+(query-metanetx
+ `{:prefixes {:keggR "<https://identifiers.org/kegg.reaction:>"}
+   :select [?reaction ?reference]
+   :where [[?reaction a :mnx/REAC]
+           [?reaction :mnx/reacXref :keggR/R00703]
+           [?reaction :mnx/reacRefer ?reference]]})
+
+    
+
+
+
+
 
