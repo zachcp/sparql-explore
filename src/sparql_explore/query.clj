@@ -142,6 +142,13 @@
 ;; sachem:stereoMode chooses stereochemistry handling using sachem:strictStereo or disables it completely using sachem:ignoreStereo
 ;; sachem:radicalMode chooses handling of free radicals, using either sachem:ignoreSpinMultiplicity that disables it completely, or sachem:defaultSpinMultiplicityAsZero and sachem:defaultSpinMultiplicityAsAny that behave just like the isotope and charge modes.
 
+(def metanetx-prefixes 
+  {:mnx "<https://rdf.metanetx.org/schema/>"
+   :owl "<http://www.w3.org/2002/07/owl#>"
+   :rdf "<http://www.w3.org/1999/02/22-rdf-syntax-ns#>"
+   :rdfs "<http://www.w3.org/2000/01/rdf-schema#>"
+   :chebi "<http://purl.obolibrary.org/obo/CHEBI_>"
+  })
 
 
 (defn clojurize-values
@@ -228,6 +235,11 @@
   (do-query sparql-text "https://chemblmirror.rdf.bigcat-bioinformatics.org/sparql"))
 
 
+(defn do-query-metanetx
+  "Query uniprot"
+  [sparql-text]
+  (do-query sparql-text "https://rdf.metanetx.org/sparql?default-graph-uri=https://rdf.metanetx.org/"))
+
 
 (defn prepare-query 
   [sparql-form prefix-map]
@@ -266,3 +278,13 @@
    (let [sparql-query (prepare-query sparql-form chembl-prefixes)]
      (println (clojure.pprint/pprint sparql-query))
      (do-query-chembl sparql-query))))
+
+
+(defn query-metanetx
+  ([sparql-form]
+   (query-metanetx {} sparql-form))
+  ([opts sparql-form]
+   (let [sparql-query (sq/prepare-query sparql-form metanetx-prefixes)]
+     (println (clojure.pprint/pprint sparql-query))
+     (do-query-metanetx sparql-query))))
+
