@@ -90,7 +90,47 @@
            [?reaction :mnx/reacXref :keggR/R00703]
            [?reaction :mnx/reacRefer ?reference]]})
 
-    
+
+;; ##  External Reaction Identifier
+;;
+;; List the external identifiers that correspond 
+;; to the KEGG reaction R00703 (lactate dehydrogenase).
+;; This crosslinking of external identifiers is the core 
+;; of MNXref.
+
+(query-metanetx
+ `{:prefixes {:keggR "<https://identifiers.org/kegg.reaction:>"}
+   :select [?xref]
+   :where [[?reaction a :mnx/REAC]
+           [?reaction :mnx/reacXref :keggR/R00703]
+           [?reaction :mnx/reacXref ?xref]]})
+
+
+
+;; ##  Stoicheoetry
+;;
+;; Show the reaction equation catalyzed by lactate 
+;; dehydrogenase (KEGG reaction R00703). NB: 
+;; Stoichiometric coefficients for substrates are 
+;; given a negative value
+
+(query-metanetx
+ `{:prefixes {:keggR "<https://identifiers.org/kegg.reaction:>"
+              :rhea "<http://rdf.rhea-db.org/>"}
+   :select [?chem ?chem_name ?comp ?comp_name ?coef]
+   :where [[?reac :mnx/reacXref :keggR/R00703]
+           [?reac ?side ?part]
+           [?part :mnx/chem ?chem]
+           [?part :mnx/comp ?comp]
+           [?part :mnx/coef ?c]
+           [?chem :rdfs/comment ?chem_name]
+           [?comp :rdfs/comment ?comp_name]
+           [?reaction :mnx/reacXref ?xref]
+           [:filter (in ?side :mnx/left :mnx/right)]
+           [:bind   [(if (= ?side :mnx/left) (- 0 ?c) ?c) ?coef]]
+           ]
+   :limit 10
+   })
 
 
 
