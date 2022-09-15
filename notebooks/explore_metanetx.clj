@@ -238,3 +238,52 @@
    :order-by [?reac_orig_label]
    :limit 10})
 
+
+;; ## Reactions involving PAT_ECOLI
+;;  Given the protein with UniProt accession number *P42588* 
+;;  (PAT_ECOLI, putrescine aminotransferase, EC 2.6.1.82) 
+;;  retrieve all reactions and models in which this polypeptide 
+;;  appears. 
+
+(sq/query-metanetx
+ `{:prefixes {:up "<http://purl.uniprot.org/uniprot/>"}
+   :select [?mnet_label ?reac_label ?reac_eq ?MNXR
+            [(group-concat ?cata_label :separator ";") ?complex]]
+   :where [[?pept :mnx/peptXref :up/P42588] 
+           [?cata :mnx/pept ?pept]
+           [?cata :rdfs/label ?cata_label]
+           [?gpr  :mnx/cata ?cata]
+           [?gpr  :mnx/reac ?reac]
+           [?reac :rdfs/label ?reac_label]
+           [?reac :rdfs/comment ?reac_eq]
+           [?mnet :mnx/gpr ?gpr]
+           [?mnet :rdfs/label ?mnet_label]
+           [:optional [[?reac :mnx/mnxr ?MNXR]]]]
+   :group-by [?mnet_label ?reac_label ?reac_eq ?MNXR]
+   :order-by [?reac_label]
+   :limit 10})
+
+
+
+;; ## Reactions involving ExbB
+;; 
+;;  Same as previous but with *P0ABU7* as a query (Biopolymer
+;; transport protein ExbB) .
+
+(sq/query-metanetx
+ `{:prefixes {:up "<http://purl.uniprot.org/uniprot/>"}
+   :select [?mnet_label ?reac_label ?reac_eq ?MNXR
+            [(group-concat ?cata_label :separator ";") ?complex]]
+   :where [[?pept :mnx/peptXref :up/P0ABU7]
+           [?cata :mnx/pept ?pept]
+           [?cata :rdfs/label ?cata_label]
+           [?gpr  :mnx/cata ?cata]
+           [?gpr  :mnx/reac ?reac]
+           [?reac :rdfs/label ?reac_label]
+           [?reac :rdfs/comment ?reac_eq]
+           [?mnet :mnx/gpr ?gpr]
+           [?mnet :rdfs/label ?mnet_label]
+           [:optional [[?reac :mnx/mnxr ?MNXR]]]]
+   :group-by [?mnet_label ?reac_label ?reac_eq ?MNXR]
+   :order-by [?reac_label]
+   :limit 10})
