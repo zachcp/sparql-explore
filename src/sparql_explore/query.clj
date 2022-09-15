@@ -284,7 +284,7 @@
   ([sparql-form]
    (query-metanetx {} sparql-form))
   ([opts sparql-form]
-   (let [sparql-query (sq/prepare-query sparql-form metanetx-prefixes)]
+   (let [sparql-query (prepare-query sparql-form metanetx-prefixes)]
      (println (clojure.pprint/pprint sparql-query))
      (do-query-metanetx sparql-query))))
 
