@@ -37,6 +37,7 @@
 ;; ## NXQ1 
 ;; Phospho-proteins in the cytoplasm
 
+^{::clerk/viewer clerk/table}
 (sq/query
  :nextprot
  `{:select-distinct [?entry]
@@ -57,7 +58,7 @@
 
 ;; ## NXQ2 
 ;; Protens in the nucleus AND the cytoplasm
-
+^{::clerk/viewer clerk/table}
 (sq/query
  :nextprot
  `{:select-distinct [?entry]
@@ -79,7 +80,7 @@
 
 ;; ## NXQ3
 ;; 7-Transmembrane proteins
-
+^{::clerk/viewer clerk/table}
 (sq/query
  :nextprot
  `{:select-distinct [?entry]
@@ -94,7 +95,7 @@
 ;; ## NXQ4
 ;; Brain protien swith high IHC level but not expressed
 ;; in the testis
-
+^{::clerk/viewer clerk/table}
 (sq/query
  :nextprot
  `{:select-distinct [?entry]
@@ -115,7 +116,7 @@
 ;; ## NXQ5
 ;; Mitochondrial proteins without a transit peptide
 
-
+^{::clerk/viewer clerk/table}
 (sq/query
  :nextprot
  `{:select-distinct [?entry]
