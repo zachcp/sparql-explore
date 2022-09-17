@@ -14,11 +14,7 @@
   ;; `:dev` alias, evaluate these two forms, point your browser there,
   ;; then read on. :)
   (clerk/serve! {:watch-paths ["notebooks"]})
-  (clerk/show! "notebooks/explore_chembl.clj")
-  (clerk/build-static-app! {:paths ["notebooks/explore_uniprot.clj"
-                                    "notebooks/explore_pubchem.clj"
-                                    "notebooks/explore_chembl.clj"
-                                    "notebooks/explore_metanetx.clj"]}))
+  (clerk/show! "notebooks/explore_chembl.clj"))
 
 
 

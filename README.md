@@ -23,7 +23,7 @@ lein new app sparql-explore
 
 ## Simple Deploy
 ```
-# build in repl
-cp public/build/index.html docs.index.ttml
+# build in repl with the notebooks/build_notebooks.clj
+cp public/build/index.html docs.index.html
 # git commit / push
 ```
