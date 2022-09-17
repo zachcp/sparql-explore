@@ -2,10 +2,7 @@
   :nextjournal.clerk/toc true}
 (ns sparql-explore.explore-chembl
   (:require [sparql-explore.query :as sq]
-            [mundaneum.query :as md]
-            [com.yetanalytics.flint :as f]
             [nextjournal.clerk :as clerk]
-            [tick.core :as tick]
             [nextjournal.clerk.viewer :as v]))
 
 
@@ -20,7 +17,7 @@
   (clerk/serve! {:watch-paths ["notebooks"]})
   (clerk/show! "notebooks/explore_chembl.clj")
   (clerk/build-static-app! {:paths [
-                                    "notebooks/explore.clj"
+                                    "notebooks/explore_uniprot.clj"
                                     "notebooks/explore_pubchem.clj"
                                     "notebooks/explore_chembl.clj"
                                     ]})
@@ -44,8 +41,9 @@
 ;; 
 ;; ## Binding Affinity
 ^{::clerk/viewer clerk/table}
-(sq/query-chembl 
- `{:select-distinct [?targetLabel ?molLabel ?assayLabel ?type ?value]
+(sq/query
+ :chembl
+ `{:select-distinct [?identifier ?targetLabel ?molLabel ?assayLabel ?type ?value ?molecule]
    :where [
            [?assay    :chembl/hasTarget     ?target]
            [?activity :chembl/hasAssay      ?assay]
@@ -55,6 +53,7 @@
            [?activity :chembl/type          ?type] 
            [?activity :chembl/standardValue ?value]
            ; get labels
+           [?molecule :chembl/chemblId ?identifier]
            [?target   :rdfs/label ?targetLabel]
            [?molecule :rdfs/label ?molLabel]
            [?assay    :rdfs/label ?assayLabel]
@@ -66,7 +65,8 @@
 ;; ## SMILES
 ;;
 ^{::clerk/viewer clerk/table}
-(sq/query-chembl
+(sq/query
+ :chembl
  `{:select [?identifier ?smiles ?image ]
    :where [; SIO_000008     has-attribute
            ; CHEMINF_000018 SMILES descriptor
@@ -85,7 +85,8 @@
 ;; 
 ;; Todo: handle VOID. Not sure what that is.
 ^{::clerk/viewer clerk/table}
-(sq/query-chembl
+(sq/query
+ :chembl
  `{:prefixes {:pav     "<http://purl.org/pav/>"
               :dcterms "<http://purl.org/dc/terms/>"}
    :select-distinct [ [(str ?titleLit) ?title] ?date ?license ?dataset]
@@ -98,7 +99,116 @@
 
 
 ;; ## Triples Count
-(sq/query-chembl 
+(sq/query
+ :chembl
  `{:select [[(count *) ?count]]
    :where [[?s ?p ?o]]
    :limit 10})
+
+
+;; ## Molecules
+(sq/query
+ :chembl
+ `{:select [?molecule ?type ?moleculelabel]
+   :where [[?molecule a ?type]
+           [?type (* :rdfs/subClassOf) :chembl/Substance] 
+           [?moleculelabel :rdfs/label ?molLabel]
+           ]
+   :limit 10})
+
+
+(sq/query 
+ :chembl
+ `{:select [?molecule ?type ?moleculelabel]
+   :where [[?molecule a ?type]
+           [?type (* :rdfs/subClassOf) :chembl/SmallMolecule]
+           [?moleculelabel :rdfs/label ?molLabel]]
+   :limit 10})
+
+;; ## Target of Gleevec 
+;; Get ChEMBL activities, assays and targets for the drug Gleevec (CHEMBL941)
+(sq/query
+ :chembl
+ `{:select [?activity ?assay ?target ?targetcmpt ?uniprot]
+   :where [
+           [?activity a :chembl/Activity ]
+           [?activity   :chembl/hasMolecule :chembl_mol/CHEMBL941]
+           [?activity   :chembl/hasAssay ?assay]
+           [?assay      :chembl/hasTarget ?target]
+           [?target     :chembl/hasTargetComponent ?targetcmpt]
+           [?targetcmpt :chembl/targetCmptXref ?uniprot]
+           [?uniprot a :chembl/UniprotRef]
+           ]
+   })
+
+
+
+
+(sq/query
+ :chembl
+ `{:select-distinct [?molecule ?p]
+   :where [[:bind [:chembl_mol/CHEMBL941 ?molecule]]
+           [?molecule ?p ?o]
+           ]})
+
+; paclitaxel
+(sq/query
+ :chembl
+ `{:select-distinct [?molecule ?p]
+   :where [[:bind [:chembl_mol/CHEMBL428647 ?molecule]]
+           [?molecule ?p ?o]]})
+
+(sq/query
+ :chembl
+ `{:select-distinct [?molecule ?p]
+   :where [[:bind [:chembl_mol/CHEMBL428647 ?molecule]]
+           [?s ?p ?molecule]]})
+
+;; Todo: Fix
+(sq/query
+ :chembl
+ `{:ask []
+   :where [[:chembl_mol/CHEMBL428647 a :chembl/Substance]]})
+
+(sq/query 
+ :chembl
+ `{:select-distinct [?p]
+   :where [[:chembl_mol/CHEMBL428647 ?p ?o]]})
+
+;; link to chebi
+(sq/query
+ :chembl
+ `{:select-distinct [?o]
+   :where [[:chembl_mol/CHEMBL428647 :skos/exactMatch ?o]]})
+
+(sq/query
+ :chembl
+ `{:select-distinct [?chebi ?p ?o]
+   :where [[:chembl_mol/CHEMBL428647 :skos/exactMatch ?chebi]
+           [?chebi ?p ?o]
+           ]})
+
+
+;; cross refs
+(sq/query
+ :chembl
+ `{:select-distinct [?o]
+   :where [[:chembl_mol/CHEMBL428647 :chembl/moleculeXref ?o]]})
+
+(sq/query
+ :chembl
+ `{:select [?chemblid]
+   :where [[:chembl_mol/CHEMBL428647 :chembl/chemblId ?chemblid]]})
+
+(sq/query
+ :chembl
+ `{:select [?chemblid]
+   :where [[:chembl_mol/CHEMBL428647 ?p ?o]]})
+
+(sq/query
+ :chembl
+ `{:select-distinct [?s ?p]
+   :where [
+           [?s a :chembl/Activity]
+           [?s ?p :chembl_mol/CHEMBL428647]
+           ]})
