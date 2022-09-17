@@ -12,7 +12,7 @@ Queries and data rendered [online](https://zachcp.github.io/sparql-explore/#/not
 ## The Setup
 
 1. create new clj app with `neil`
-2. modify `dpes.edn` to copy the Mundaneum repo.
+2. modify `deps.edn` to copy the Mundaneum repo.
 3. open VSCode/calva and start repl.
 4. start adding UNIPROT examples
 5. git commit / push/ and serve.
