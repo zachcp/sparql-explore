@@ -9,6 +9,8 @@
 ;; Prefix Values -------------
 
 (def all-prefixes 
+  "Any RDF prefix used in one of the explored SPARQL interafaces should
+   live here. Specific endpoints will pull out the relevant subset" 
   {:CHEBI  "<http://purl.obolibrary.org/obo/CHEBI_>"
    :ECO    "<http://purl.obolibrary.org/obo/ECO_>"
    :GO     "<http://purl.obolibrary.org/obo/GO_>"
@@ -90,6 +92,11 @@
 
 
 (def query-data 
+  "This nested map has all of the information for each of the
+   endpoints explored in this repo and should be mostly
+   self-explanatory. There is a URL and a request type as
+   well as a vector of keys used to populate the prefixes
+   for that sparql endpoint"
   
    {;; UNIPROT Endpoint
     :uniprot {:sparql-url "https://sparql.uniprot.org/sparql/"
@@ -144,7 +151,8 @@
 ;; sachem:radicalMode chooses handling of free radicals, using either sachem:ignoreSpinMultiplicity that disables it completely, or sachem:defaultSpinMultiplicityAsZero and sachem:defaultSpinMultiplicityAsAny that behave just like the isotope and charge modes.
 
 
-
+;; Direct copy from Mundaneum
+;; Todo: port additions back to mundaneum
 (defn clojurize-values
   "Convert the values in `result` to Clojure types."
   [result]
@@ -181,7 +189,7 @@
 
 
 (defn do-query
-  "Submit SPARQL data to SPARQL Endpoint"
+  "Submit SPARQL data to SPARQL Endpoint using http/get"
   [sparql-text sparql-url]
   (mapv clojurize-values
         (-> (http/get sparql-url
@@ -193,7 +201,7 @@
             :bindings)))
 
 (defn do-query-post
-  "Submit SPARQL data to SPARQL Endpoint"
+  "Submit SPARQL data to SPARQL Endpoint using http/post"
   [sparql-text sparql-url]
   (mapv clojurize-values
         (-> (http/post sparql-url 
@@ -207,7 +215,7 @@
             :bindings)))
 
 
-
+;; Direct copy from Mundaneum
 (defn prepare-query 
   [sparql-form prefix-map]
   (-> sparql-form
