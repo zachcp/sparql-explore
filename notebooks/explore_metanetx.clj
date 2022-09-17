@@ -2,11 +2,7 @@
   :nextjournal.clerk/toc true}
 (ns sparql-explore.explore-metanetx
   (:require [sparql-explore.query :as sq]
-            [mundaneum.query :as md]
-            [com.yetanalytics.flint :as f]
-            [nextjournal.clerk :as clerk]
-            [tick.core :as tick]
-            [nextjournal.clerk.viewer :as v]))
+            [nextjournal.clerk :as clerk]))
 
 
 ^{::clerk/visibility :hide
@@ -32,6 +28,24 @@
 ;; MetanetX
 ;; [metanet-x rdf](https://www.metanetx.org/cgi-bin/mnxget/mnxref/MetaNetX_RDF_schema.pdf)
 ;;
+;; 
+;; [ From the [tutorial](https://www.metanetx.org/mnxdoc/short-tutorial.html)] MetaNetX.org treats each model (i.e., metabolic network or pathway) as 
+;; an being constituted of different entities:
+;; 
+;;     - chemical compounds (chem)
+;;     - subcellular compartments (comp)
+;;     - species (spec): chemical compounds that are assigned to a subcellular compartment
+;;     - metabolic reactions (reac): reactions that transform species into another
+;;     - genes or peptides (pept): the two are currently not distinguished, which make more
+;;     - "enzymes" (enzy): sets of peptides (or genes) linked to a reaction with information on bounds
+;; (maximal and minimal bounds) defining the directionality such that 
+;; the maximum flux can be carried by this reaction with these enzymes
+
+;; Depending on the studied model (GEM or pathway), it may contain biomass production 
+;; reaction(s) (identified by the identifier "BIOMASS" in the corresponding reaction equation),
+;; or uptake or secretion reactions (external/boundary reactions; identified by chemical 
+;; species associated with the artificial "BOUNDARY" compartment). 
+                                                    
 
 ;; # Metanex Examples
 ;; 
@@ -39,7 +53,8 @@
 ;; Retrieve the MNXref metabolite with name 
 ;;  *N,N-dimethyl-beta-alanine*, together with molecular 
 ;;  information. 
-(sq/query-metanetx 
+(sq/query
+ :metanet
  `{:select [?metabolite ?label ?reference ?formula ?charge ?inchi ?inchikey ?smiles]
    :where [[?metabolite :a :mnx/CHEM]
            [?metabolite :rdfs/label ?label] 
@@ -57,7 +72,8 @@
 ;; external databases. This crosslinking of external
 ;; identifiers is the core of MNXref.
 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:select [?metabolite ?xref]
    :where [[?metabolite :rdfs/comment "N-nitrosomethanamine"]
            [?metabolite :mnx/chemXref ?xref]]})
@@ -68,7 +84,8 @@
 ;; For the KEGG compound C01732, retrieve the
 ;; MNXref identifier, name and reference
 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:prefixes {:keggC "<https://identifiers.org/kegg.compound:>"}
    :select [?metabolite ?reference ?name]
    :where [[?metabolite :a :mnx/CHEM]
@@ -83,7 +100,8 @@
 ;; that corresponds to the KEGG reaction R00703 
 ;; (lactate dehydrogenase)
 
-(sq/query-metanetx
+(sq/query 
+ :metanet
  `{:prefixes {:keggR "<https://identifiers.org/kegg.reaction:>"}
    :select [?reaction ?reference]
    :where [[?reaction a :mnx/REAC]
@@ -98,7 +116,8 @@
 ;; This crosslinking of external identifiers is the core 
 ;; of MNXref.
 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:prefixes {:keggR "<https://identifiers.org/kegg.reaction:>"}
    :select [?xref]
    :where [[?reaction a :mnx/REAC]
@@ -114,7 +133,8 @@
 ;; Stoichiometric coefficients for substrates are 
 ;; given a negative value
 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:prefixes {:keggR "<https://identifiers.org/kegg.reaction:>"
               :rhea "<http://rdf.rhea-db.org/>"}
    :select [?chem ?chem_name ?comp ?comp_name ?coef]
@@ -135,7 +155,8 @@
 ;;  antiporter (*rhea:34763*). NB: there are two generic 
 ;;  compartments here. 
 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:prefixes {:keggR "<https://identifiers.org/kegg.reaction:>"
               :rhea "<http://rdf.rhea-db.org/>"}
    :select [?chem ?chem_name ?comp ?comp_name ?coef]
@@ -155,7 +176,8 @@
 ;;  here, as MetaNetX distinguishes protons used for balancing 
 ;;  (MNXM1) from those that are translocated (MNXM01). 
 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:prefixes {:biggR "<https://identifiers.org/bigg.reaction:>"}
    :select [?chem ?chem_name ?comp ?comp_name ?coef]
    :where [[?reac :mnx/reacXref :biggR/ATPS4m]
@@ -175,7 +197,8 @@
 ;;  their numbers of reactions, chemical, compartments and 
 ;;  genes/proteins. 
 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:select [?mnet 
             ?taxon
             [(count ?reac :distinct? true)  ?count_reac]
@@ -189,7 +212,8 @@
            [?part :mnx/chem ?chem]
            [?part :mnx/comp ?comp]
            [?gpr (alt :mnx/cata :mnx/pept) ?pept]
-           [:optional [[?mnet :mnx/taxid ?taxon]]]]})
+           [:optional [[?mnet :mnx/taxid ?taxon]]]]
+   :group-by [?mnet ?taxon]})
 
 
 ;; ## GEMs Reaction in E.Coli
@@ -197,7 +221,8 @@
 ;;  reaction equations occurring in *bigg_e_coli_core*. NB: here 
 ;;  the reac label is the one produced while compiling MetaNetX 
 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:select [?reac_label ?chem_name ?comp_name ?coef]
    :where [[?mnet :rdfs/label "bigg_e_coli_core"]
            [?mnet (cat :mnx/gpr :mnx/reac) ?reac]
@@ -218,7 +243,8 @@
 ;;  ...in addition reactions are endowed with a direction, flux 
 ;;  bounds and possibly the description of the enzymes that 
 ;;  catalyze it. 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:select [?reac_orig_label ?reac_mnx_label  ?lb ?ub ?dir ?cata_orig 
             [(group-concat ?cplx_label :separator " OR ") ?cplx_info]
             ]
@@ -245,7 +271,8 @@
 ;;  retrieve all reactions and models in which this polypeptide 
 ;;  appears. 
 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:prefixes {:up "<http://purl.uniprot.org/uniprot/>"}
    :select [?mnet_label ?reac_label ?reac_eq ?MNXR
             [(group-concat ?cata_label :separator ";") ?complex]]
@@ -270,7 +297,8 @@
 ;;  Same as previous but with *P0ABU7* as a query (Biopolymer
 ;; transport protein ExbB) .
 
-(sq/query-metanetx
+(sq/query
+ :metanet
  `{:prefixes {:up "<http://purl.uniprot.org/uniprot/>"}
    :select [?mnet_label ?reac_label ?reac_eq ?MNXR
             [(group-concat ?cata_label :separator ";") ?complex]]
