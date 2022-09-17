@@ -5,9 +5,7 @@
 
   (require '[babashka.fs :as fs])
   
-  (map str (fs/glob "notebooks" "explore**{.clj,cljc}"))
-  (clerk/build-static-app! {:paths ["notebooks/explore_uniprot.clj"
-                                    "notebooks/explore_pubchem.clj"
-                                    "notebooks/explore_chembl.clj"
-                                    "notebooks/explore_metanetx.clj"]}))
+  (let [notebook-paths (map str (fs/glob "notebooks" "explore**{.clj,cljc}"))]
+   (clerk/build-static-app! {:paths notebook-paths})) 
+  )
 

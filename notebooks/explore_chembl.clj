@@ -121,6 +121,7 @@
 
 ;; ## Target of Gleevec 
 ;; Get ChEMBL activities, assays and targets for the drug Gleevec (CHEMBL941)
+^{::clerk/viewer clerk/table}
 (sq/query
  :chembl
  `{:select [?activity ?assay ?target ?targetcmpt ?uniprot]
@@ -137,7 +138,7 @@
 
 
 
-
+^{::clerk/viewer clerk/table}
 (sq/query
  :chembl
  `{:select-distinct [?molecule ?p]
@@ -146,12 +147,14 @@
            ]})
 
 ; paclitaxel
+^{::clerk/viewer clerk/table}
 (sq/query
  :chembl
  `{:select-distinct [?molecule ?p]
    :where [[:bind [:chembl_mol/CHEMBL428647 ?molecule]]
            [?molecule ?p ?o]]})
 
+^{::clerk/viewer clerk/table}
 (sq/query
  :chembl
  `{:select-distinct [?molecule ?p]
@@ -184,6 +187,7 @@
 
 
 ;; cross refs
+^{::clerk/viewer clerk/table}
 (sq/query
  :chembl
  `{:select-distinct [?o]

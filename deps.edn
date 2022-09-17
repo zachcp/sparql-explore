@@ -8,7 +8,7 @@
                                 :exclusions [org.clojure/clojure
                                              org.clojure/clojurescript]}}
  :aliases
- {:dev {:extra-deps {io.github.nextjournal/clerk {:mvn/version "0.9.513"}}}
+ {:dev {:extra-deps {io.github.nextjournal/clerk {:mvn/version "0.10.560"}}}
   :build {:deps {io.github.seancorfield/build-clj
                  {:git/tag "v0.6.3" :git/sha "9b8e09b"
                   ;; since we're building an app uberjar, we do not
