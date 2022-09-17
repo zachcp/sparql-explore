@@ -2,11 +2,7 @@
   :nextjournal.clerk/toc true}
 (ns sparql-explore.explore-pubchem
   (:require [sparql-explore.query :as sq]
-            [mundaneum.query :as md]
-            [com.yetanalytics.flint :as f]
-            [nextjournal.clerk :as clerk]
-            [tick.core :as tick]
-            [nextjournal.clerk.viewer :as v]))
+            [nextjournal.clerk :as clerk]))
 
 
 ^{::clerk/visibility :hide
@@ -46,7 +42,8 @@
 ;;  difficulty is knowing the various relationships between
 ;; everything. The english-version is not too bad....
 ^{::clerk/viewer clerk/table}
-(sq/query-pubchem
+(sq/query
+  :pubchem
    `{:select-distinct [?protname ?assay ?epname ?value ?sub]
      :where [; :obo/CHEBI_53289 = donepezil
              ; :obo/RO_0000056  = participates-in
@@ -76,7 +73,8 @@
 ;; What pharmacological roles of SID46505803 are defined by ChEBI
 ;;  Note the use of the anonymous  blanknode, `_b1` to define boundaries
 ^{::clerk/viewer clerk/table}
-(sq/query-pubchem
+(sq/query
+   :pubchem
   `{:select-distinct [?name ?rolename]
     :where [
             ; :sio/CHEMINF_000477 = has PubChem normalized counterpar

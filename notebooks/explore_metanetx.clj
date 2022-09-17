@@ -17,7 +17,8 @@
   (clerk/show! "notebooks/explore_chembl.clj")
   (clerk/build-static-app! {:paths ["notebooks/explore_uniprot.clj"
                                     "notebooks/explore_pubchem.clj"
-                                    "notebooks/explore_chembl.clj"]}))
+                                    "notebooks/explore_chembl.clj"
+                                    "notebooks/explore_metanetx.clj"]}))
 
 
 
