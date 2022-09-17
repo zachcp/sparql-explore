@@ -75,3 +75,62 @@
            [:filter (not (exists [[?loc2 :np/negativeEvidence ?negev]]))]] 
    :limit 10})
 
+
+
+;; ## NXQ3
+;; 7-Transmembrane proteins
+
+(sq/query
+ :nextprot
+ `{:select-distinct [?entry]
+   :where [[?entry :np/isoform ?iso]
+           [?iso :np/topology ?statement]
+           [?statement :a :np/TransmembraneRegion]]
+   :group-by [?entry ?iso]
+   :having [(= 7 (count ?statement))]
+   :limit 10})
+
+
+;; ## NXQ4
+;; Brain protien swith high IHC level but not expressed
+;; in the testis
+
+(sq/query
+ :nextprot
+ `{:select-distinct [?entry]
+   :where [[?entry :np/isoform ?iso]
+           [?iso :np/expression ?e1]
+           ;:evidence/:expressionLevel :High.
+           [?e1 (cat :np/term :np/childOf) :np-terminology/TS-0095]
+           ; not expressed in testis
+           [?iso :np/undetectedExpression ?e2]
+           [?e2  :np/term :np-terminology/TS-1030]
+           [:filter 
+            (not (exists [[?iso (cat :np/detectedExpression :np/term :np/childOf) :np-terminology/TS-1030]]))]
+           ]
+   :limit 10})
+
+
+
+;; ## NXQ5
+;; Mitochondrial proteins without a transit peptide
+
+
+(sq/query
+ :nextprot
+ `{:select-distinct [?entry]
+   :where [
+           ;SL and GO values for mitochondrion
+           [:values {?mitoloc [:np-terminology/SL-0173 :np-terminology/GO_0005739]}]
+           [?entry :np/isoform ?iso]
+           [?iso :np/expression ?e1]
+           ;:evidence/:expressionLevel :High.
+           [?e1 (cat :np/term :np/childOf) :np-terminology/TS-0095]
+           ; not expressed in testis
+           [?iso :np/cellularComponent ?loc]
+           [?loc (cat :np/term :np/childOf) ?mitoloc]
+           [?e2  :np/term :np-terminology/TS-1030]
+           ; No negative localization evidence}
+           [:filter (not (exists [[?loc :np/negativeEvidence ?negev]]))]]
+   :limit 10})
+

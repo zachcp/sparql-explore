@@ -31,6 +31,7 @@
    :dc       "<http://purl.org/dc/terms/>"
    :dcterms  "<http://purl.org/dc/terms/>"
    :drugbank "<https://idsm.elixir-czech.cz/sparql/endpoint/drugbank>"
+   :drugbankdrugs "<http://wifo5-04.informatik.uni-mannheim.de/drugbank/resource/drugs/>"
    :ec       "<http://purl.uniprot.org/enzyme/>"
    :ensembl  "<http://rdf.ebi.ac.uk/resource/ensembl/>"
    :ensemblexon       "<http://rdf.ebi.ac.uk/resource/ensembl.exon/>"
@@ -56,7 +57,21 @@
    :ncit     "<http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#>"
    :ndfrt    "<http://evs.nci.nih.gov/ftp1/NDF-RT/NDF-RT.owl#>"
    :nextprot "<http://nextprot.org/rdf/entry/>"
-   :np       "<http://nextprot.org/rdf#>"
+   :np       "<http://nextprot.org/rdf#>" 
+   :np-context "<http://nextprot.org/rdf/context/>"
+   :np-db    "<http://nextprot.org/rdf/db/>"
+   :np-annotation "<http://nextprot.org/rdf/annotation/>" 
+   :np-entry     "<http://nextprot.org/rdf/entry/>"
+   :np-evidence  "<http://nextprot.org/rdf/evidence/>"
+   :np-gene  "<http://nextprot.org/rdf/gene/>"
+   :np-identifier "<http://nextprot.org/rdf/identifier/>"
+   :np-interaction "<http://nextprot.org/rdf/interaction/>"
+   :np-isoform  "<http://nextprot.org/rdf/isoform/>" 
+   :np-publication "<http://nextprot.org/rdf/publication/>"
+   :np-proteoform "<http://nextprot.org/rdf/proteoform/>"
+   :np-source "<http://nextprot.org/rdf/source/>"
+   :np-terminology "<http://nextprot.org/rdf/terminology/>"
+   :np-xref  "<http://nextprot.org/rdf/xref/>"
    :obo      "<http://purl.obolibrary.org/obo/>"
    :orth     "<http://purl.org/net/orth#>"
    :orthodb  "<http://purl.orthodb.org/>"
@@ -79,9 +94,11 @@
    :skos     "<http://www.w3.org/2004/02/skos/core#>"
    :sp       "<http://spinrdf.org/sp#>"
    :substance "<http://rdf.ncbi.nlm.nih.gov/pubchem/substance/>"
-   :taxon    "<http://purl.uniprot.org/taxonomy/>"
-   :uberon   "<http://purl.obolibrary.org/obo/uo#>"
+   :taxon     "<http://purl.uniprot.org/taxonomy/>"
+   :uberon    "<http://purl.obolibrary.org/obo/uo#>"
+   :uniprot   "<http://purl.uniprot.org/uniprot/>"
    :uniprotkb "<http://purl.uniprot.org/uniprot/>"
+   :unipage   "<http://www.uniprot.org/uniprot/>"
    :up       "<http://purl.uniprot.org/core/>"
    :vg       "<http://biohackathon.org/resource/vg#>"
    :wd       "<http://www.wikidata.org/entity/>"
@@ -126,7 +143,18 @@
     ;; metanet server
     :metanet {:sparql-url "https://rdf.metanetx.org/sparql?default-graph-uri=https://rdf.metanetx.org/"
               :request-type :get
-              :base-prefixes [:mnx :owl :rdf :rdfs :chebi]}})
+              :base-prefixes [:mnx :owl :rdf :rdfs :chebi]}
+    
+    :nextprot {:sparql-url "https://api.nextprot.org/sparql"
+               :request-type :post
+               :base-prefixes [:rdf :owl :rdfs :up :dc :xsd :skos :uniprot 
+                               :unipage :chebi :drugbankdrugs
+                               :np :np-entry :np-evidence :np-xref
+                               :np-publication :np-identifier
+                               :np-terminology :np-gene :np-source
+                               :np-db :np-context :np-interaction 
+                               :np-proteoform ]}
+    })
 
 
 ;; The similarity search procedure call is mapped to property sachem:similaritySearch. It accepts following arguments:
