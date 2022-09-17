@@ -2,8 +2,6 @@
   :nextjournal.clerk/toc true}
 (ns sparql-explore.explore_uniprot
   (:require [sparql-explore.query :as sq]
-            [mundaneum.query :as md]
-            [com.yetanalytics.flint :as f]
             [nextjournal.clerk :as clerk]
             [tick.core :as tick]
             [nextjournal.clerk.viewer :as v]))
@@ -18,8 +16,8 @@
   ;; `:dev` alias, evaluate these two forms, point your browser there,
   ;; then read on. :)
   (clerk/serve! {:watch-paths ["notebooks"]})
-  (clerk/show! "notebooks/explore.clj")
-  (clerk/build-static-app! {:paths ["notebooks/explore_uniprot.clj"]}) 
+  (clerk/show! "notebooks/explore_uniprot.clj")
+  ;; (clerk/build-static-app! {:paths ["notebooks/explore_uniprot.clj"]}) 
   )
 
 
@@ -135,15 +133,18 @@
 
 ;; ## Get Taxa
 ;; Pull down 10 taxa
-(sq/query `{:select [?taxon]
-            :where  [[?taxon :a :up/Taxon]]
-            :limit 10})
+(sq/query 
+ :uniprot
+ `{:select [?taxon] 
+   :where  [[?taxon :a :up/Taxon]] 
+   :limit 10})
 
 
 ;; ## Proteins from E.Coli
 ;; get bacterial taxa
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?taxon ?name]
    :where  [[?taxon :a :up/Taxon]
             [?taxon :up/scientificName ?name]
@@ -155,6 +156,7 @@
 ;; ## Proteins from E.Coli
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?organism ?isoform ?aa_sequence]
    :where  [[?protein a :up/Protein]
             [?protein :up/organism ?organism]
@@ -166,6 +168,7 @@
 
 ;; ## Mnemonic
 (sq/query
+ :uniprot
  `{:select [?protein ?name]
    :where  [[?protein a :up/Protein]
             [?protein :up/mnemonic "A4_HUMAN"]
@@ -180,6 +183,7 @@
 
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?db]
    :where  [[?protein a :up/Protein]
             [?protein :up/classifiedWith ~(keyword "keywords/5")]
@@ -195,6 +199,7 @@
 
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select-distinct [?protein ?db ?link]
    :where  [[?protein a :up/Protein]
             [?protein :up/classifiedWith ~(keyword "keywords/5")]
@@ -209,6 +214,7 @@
 ;;  Bit of a convoluted query but helpful once in place.
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?name]
    :where  [[?protein a :up/Protein]
             [?protein   :up/reviewed true]
@@ -226,6 +232,7 @@
 ;;  Bit of a convoluted query but helpful once in place.
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?name ?text]
    :where  [[?protein a :up/Protein]
             [?protein :up/organism  ~(full-tax-IRI 9606)]
@@ -242,6 +249,7 @@
 ;;  Bit of a convoluted query but helpful once in place.
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?name ?text]
    :where  [[?protein a :up/Protein]
             [?protein :up/organism  ~(full-tax-IRI 9606)]
@@ -257,6 +265,7 @@
 ;;
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?text]
    :where  [[?protein a :up/Protein]
             [?protein :up/organism  ~(full-tax-IRI 9606)]
@@ -273,6 +282,7 @@
 ;; not really sure how to best use that class/ontology
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?annotation ?begin ?text ?original ?substitution]
    :where  [[?protein a :up/Protein]
             [?protein   :up/organism  ~(full-tax-IRI 9606)]
@@ -297,6 +307,7 @@
 ;; note: running into some slowness on this query
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?begin ?end]
    :where  [[?protein a :up/Protein]
             [?protein   :up/annotation ?annotation]
@@ -315,6 +326,7 @@
 ;; 
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?date]
    :where  [[?protein a :up/Protein]
             [?protein   :up/created  ?date]
@@ -342,6 +354,7 @@
 ;;```clj
 ;; ^{::clerk/viewer clerk/table}
 ;; (sq/query
+;;  :uniprot
 ;;  `{:construct [?protein a :up/HumanProtein]
 ;;    :where  [[?protein a :up/Protein]
 ;;             [?protein   :up/organism  ~(full-tax-IRI 9606)]]
@@ -357,6 +370,7 @@
 ;;  ; DESCRIBE <http://purl.uniprot.org/embl-cds/AAO89367.1>
 ;; ^{::clerk/viewer clerk/table}
 ;; (sq/query
+;;  :uniprot
 ;;  `{:describe ["<http://purl.uniprot.org/embl-cds/AAO89367.1>"]})
 ;; ```
 
@@ -368,6 +382,7 @@
 ;;  ; DESCRIBE <http://purl.uniprot.org/embl-cds/AAO89367.1>
 ;; ^{::clerk/viewer clerk/table}
 ;; (sq/query
+;; :uniprot
 ;;  `{:describe [~(full-tax-IRI 9606)]
 ;;    :from  "<http://sparql.uniprot.org/taxonomy>"})
 
@@ -379,6 +394,7 @@
 ;; ```clj
 ;; ^{::clerk/viewer clerk/table}
 ;; (sq/query
+;; :uniprot
 ;;  `{:select [?protein [(avg ?linksToPdbPerEntry) ?avgLinksToPdbPerEntry]]
 ;;    :where  {:select [?protein [(count ?db :distinct? true) ?linksToPdbPerEntry]]
 ;;             :where [[?protein a :up/Protein]
@@ -398,6 +414,7 @@
 ;; ```clj
 ;; ^{::clerk/viewer clerk/table}
 ;; (sq/query
+;; :uniprot
 ;;  `{:select [?enzyme [(count ?protein) ?size]]
 ;;    :where [[?protein :up/enzyme ?enzyme]
 ;;            [?enzyme rdfs:subClassOf ?ecClass]]
@@ -459,6 +476,7 @@
 ;;
 ;; ^{::clerk/viewer clerk/table}
 ;; (sq/query
+;; :uniprot
 ;;  `{:select [?source [(count ?attribution) ?attributions]]
 ;;    :where  [ 
 ;;             [?protein a :up/Protein]
@@ -478,6 +496,7 @@
 ;; 
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?disease ?location_inside_cell ?cellcmpt]
    :where  [[?protein :up/annotation ?diseaseAnnotation]
             [?protein :up/annotation ?subcellAnnotation]
@@ -494,6 +513,7 @@
 ;; 
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?disease ?location_inside_cell ?cellcmpt]
    :where  [[?protein :up/annotation ?diseaseAnnotation]
             [?protein :up/annotation ?subcellAnnotation]
@@ -513,6 +533,7 @@
 ;; Count the kinases
 ;; 
 (sq/query
+ :uniprot
  `{:select [[(count ?protein :distinct? true) ?pc]]
    :where  [[?protein a :up/Protein]
             [?protein   :up/reviewed true]
@@ -538,6 +559,7 @@
 ;; Todo: also broken in the examples
 ;;
 (sq/query
+ :uniprot
  `{:select [?protein ?anyKindOfName]
    :where  [[?protein a :up/Protein]
             [?protein  (alt :up/recommendedName :up/alternativeName) ?structuredName]
@@ -552,6 +574,7 @@
 ;; Todo: also broken in the examples
 ;;
 (sq/query
+ :uniprot
  `{:select [?protein ?anyKindOfName]
    :where  [[?protein a :up/Protein]
             [?protein  (alt
@@ -578,6 +601,7 @@
 ;;
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?proteome]
    :where  [[?protein a :up/Protein]
             [?protein :up/reviewed true]
@@ -599,6 +623,7 @@
 ;;
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein [(group-concat ?locusName :separator ",") ?locusNames]]
    :where  [[?protein a :up/Protein]
             [?protein :up/organism ~(full-tax-IRI 360910)]
@@ -619,6 +644,7 @@
 ;; ```clj
 ;; ^{::clerk/viewer clerk/table}
 ;; (sq/query
+;; :uniprot
 ;;  `{:select [?sequence ?entries]
 ;;    :where  {:select [?sequence [(count ?entry) ?entries]]
 ;;             :where [[:graph 
@@ -660,6 +686,7 @@
 ;;
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?annotation ?comment]
    :where  [[?annotation a :up/Natural_Variant_Annotation]
             [?annotation :rdfs/comment ?comment]]
@@ -677,6 +704,7 @@
 ;;
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?similar ?identity]
 
    :where  [[:bind [:uniprotkb/P05607 ?protein]]
@@ -701,6 +729,7 @@
 ;; ```clj
 ;; ^{::clerk/viewer clerk/table}
 ;; (sq/query
+;; :uniprot
 ;;  `{:select [?protein ?comment ?begin ?end ?sequence ?motif]
 ;;    :where  [[?protein a :up/Protein]
 ;;             [?protein :up/organism ~(full-tax-IRI 9606)]
@@ -781,6 +810,7 @@
 ;;
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?protein ?rhea]
    :where  [[:bind ["<http://purl.obolibrary.org/obo/ECO_0000269>" ?evidence]]
             [?protein :up/organism ~(full-tax-IRI 9606)]
@@ -808,6 +838,7 @@
 ;; 
 ;; ```clj
 ;; (sq/query
+;; :uniprot
 ;;  `{:select-distinct [?protein ?chemblEntry]
 ;;    :where  [[:service
 ;;              "<https://sparql.rhea-db.org/sparql>"
@@ -831,6 +862,7 @@
 ;; Todo: fix. Also broken on the site
 ;; ```clj
 ;; (sq/query
+;; :uniprot
 ;;  `{:select-distinct [?protein]
 ;;    :where  [[?protein a :up/Protein]
 ;;             [?protein :up/sequence ?sequence] 
@@ -867,6 +899,7 @@
 ;; 
 ;; ```clj
 ;; (sq/query
+;; :uniprot
 ;;  `{:prefixes {:patent "<http://data.epo.org/linked-data/def/patent/>"}
 ;;    :select [?grantDate ?patent ?application ?applicationNo]
 ;;    :where  [[?citation a :up/Patent_Citation]
@@ -893,6 +926,7 @@
 ;;
 ;; ```clj
 ;; (sq/query
+;; :uniprot
 ;;  `{:select [?interpro ?rhea]
 ;;    :from   ["<http://sparql.uniprot.org/uniprot>"]
 ;;    :where  [[?protein :up/reviewed true]
@@ -918,6 +952,7 @@
 ;;
 ^{::clerk/viewer clerk/table}
 (sq/query
+ :uniprot
  `{:select [?taxon ?ncbiTaxid ?eunisTaxon ?eunisname ?image]
    :where  [[:graph
              "<http://sparql.uniprot.org/taxonomy>"
@@ -945,6 +980,7 @@
 ;; 
 ;; ```clj
 ;; (sq/query
+;; :uniprot
 ;;  `{:prefixes {:genex "<http://purl.org/genex#>"
 ;;               :lscr   "<http://purl.org/lscr#>" }
 ;;    :select-distinct [?protein ?ensemblGene ?reaction ?anatomicEntityLabel ?anatomicEntity]
@@ -1057,6 +1093,7 @@
 ;; ```clj
 ;; ^{::clerk/viewer clerk/table}
 ;; (sq/query
+;; :uniprot
 ;;  `{:select-distinct [?chebi ?reaction ?humanProtein ?mouseProtein ?cluster]
 ;;    :where  [
 ;;             ;; obtain rheaDB info
